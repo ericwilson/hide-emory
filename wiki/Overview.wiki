@@ -1,0 +1,5 @@
+[http://www.mathcs.emory.edu/hide/ HIDE] is a framework for de-identifying unstructured data. The main application of this software is for de-identifying medical data for medical data publishing.
+
+HIDE is a [http://www.djangoproject.com/ Django] application using a [http://couchdb.apache.org/ CouchDB] document store.
+
+HIDE is currently under development by [http://www.mathcs.emory.edu/~jgardn3 James Gardner] at [http://www.emory.edu Emory University].
