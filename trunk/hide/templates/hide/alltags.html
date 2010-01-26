@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{block.super}}
+<style type="text/css" media="screen">
+#filelist {
+	background-color: white;
+        padding: 10px;
+        /*width: 800px;*/
+        /*line-height: 200%;*/
+        margin-right: 100px;
+        border: 5px solid #ccc;
+}
+</style>
+{% endblock %}
+
+{% block title %}
+HIDE v1.5
+{% endblock %}
+
+{% block content %}
+<h2>{{message}}</h2>
+<div id="filelist">
+<ol>
+  {% for tag in tags %}
+  <li><a href="/hide/{{path}}/{{tag}}">{{ tag }}</a></li>
+  {% endfor %}
+</ol>
+</div>
+{% endblock %}
+

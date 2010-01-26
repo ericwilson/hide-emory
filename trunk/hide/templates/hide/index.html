@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{block.super}}
+<style type="text/css" media="screen">
+#welcome{
+    background-color: white;
+     width: 600px;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: auto;
+  margin-right: auto;
+
+  text-align: center;
+  padding: 10px;
+border:2px solid #6688AA;
+}
+</style>
+{% endblock %}
+
+{% block title %}
+HIDE v1.5
+{% endblock %}
+
+{% block content %}
+<div id="welcome">
+<h1>Welcome to HIDE v1.5</h1>
+What would you like to do?
+<br/>
+<a href="./list/">List All Documents</a><br/>
+<a href="./labeldocs/">Label Documents</a><br/>
+<a href="./managesets/">Anonymize Documents</a><br/>
+{% comment %}
+<a href="./viewanonymized/">View Anonymized Documents</a><br/>
+{% endcomment %}
+<a href="./add/">Add Documents</a>
+</div>
+{% endblock %}
+
