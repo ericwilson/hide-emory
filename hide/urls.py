@@ -1,0 +1,18 @@
+from django.conf.urls.defaults import *
+urlpatterns = patterns('couchms.hide.views',
+    (r'^doc/(?P<id>\w+)/','detail'),
+    (r'^$','index'), 
+    (r'^list/$', 'objlist'),
+    (r'^delete/(?P<id>\w+)/','delete'), 
+    (r'^managesets/$', 'managesets'),
+    (r'^anonymize/(?P<tag>\w+)$', 'anonymize'),
+    (r'^random/$', 'randomReport'),
+    (r'^autolabel/(?P<id>\w+)','autolabel'),
+	(r'^trainsets/$', 'trainsets'),
+	(r'^labeldocs/$', 'labeldocs'),
+	(r'^train/(?P<tag>\w+)$', 'train'),
+	(r'^deidentify/(?P<id>\w+)$', 'deidentify'),
+	(r'^add/$', 'add'),
+	(r'^anondoc/(?P<id>\w+)/', 'anondoc'),
+	#    (r'^reset','reset'), 
+)

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{ block.super }}
+<link rel="stylesheet" href="/site_media/screen.css" type="text/css" media="screen" charset="utf-8">
+<style type="text/css" media="screen">
+#logo_title {
+	color: grey;
+}
+
+#capture {
+	position: absolute;
+	top: 150px;
+	padding: 10px;
+	/*width: 800px;*/
+	line-height: 200%;
+	margin-right: 100px;
+	border: 5px solid #ccc;
+}
+#sidebar {
+	position: fixed;
+	right: 20px;
+	top: 50px;
+}
+#error {
+	position: fixed;
+	top: 95%;
+	left: 80%;
+	color: red;
+	font-size: 2em;
+}
+#links {
+	position: absolute;
+	padding: 0;
+	margin: 0;
+	z-index: 100;
+}
+#links a {
+	font-size: 1.5em;
+	width: 100%;
+	border: 1px solid #aaa;
+	color: black;
+	display: block;
+	padding: 6px 10px;
+	margin: 0;
+}
+.hov {
+/*	float: left;*/
+	position: absolute;
+	background-color: #eee;
+	font-size: 10px;
+	line-height: 1em;
+	padding: 1px;
+}
+.legend {
+	text-align: center;
+}
+
+</style>
+
+<script type="text/javascript" src="/site_media/jquery.js"></script>
+<script type="text/javascript">
+
+
+{% autoescape off %}
+var tags = {{ displaytags }};
+{% endautoescape %}
+var ranges = new Array();
+var sheet = document.styleSheets[0];
+
+$().ready(function() {
+	$("#capture").mouseup( function(e) { 
+		highlight_text(e);
+	});
+	
+	/*
+	$("#submit").click( function(e) {
+		sendajax(e);
+	});
+	*/
+
+	// Create a new button for each attribute, add to legend
+	$.each(tags, function(name, color) {
+		add_to_legend(name, color);
+		create_style(name, color);
+		create_link(name);
+	});
+	
+	$("#links").bind("mouseleave", function() {
+		hide_links();
+	});
+	
+	$("#links").hide();
+	
+	set_bindings();
+	$("#tag_none").attr("checked", true);
+});
+
+function create_style(name, color) {
+	var totalrules = sheet.cssRules ? sheet.cssRules.length : sheet.rules.length
+	sheet.insertRule(name + "{background-color: " + color + ";}", totalrules);
+	sheet.insertRule('.' + name + "{background-color: " + color + ";}", totalrules);
+}
+
+function create_link(name) {
+	link = $("<a></a>");
+	link.html(name);
+	link.attr('id', 'tag_' + name);
+	link.attr('href', 'javascript:void(0);');
+	link.addClass('tag');
+	link.addClass(name);
+
+	$("#links").append(link);
+}
+
+function add_to_legend(name, color) {
+	legend = $("<p></p>");
+	legend.html(name);
+	legend.addClass('legend');
+	legend.addClass(name);
+
+	$("#legend").append(legend);
+}
+
+function set_bindings() {
+	$.each(tags, function(k, val) {
+		$(k).each(function(elem) {
+			delete_link(this, k);
+		});
+	});
+};
+
+function delete_link(tag, name) {
+	tag = $(tag);
+	link = $("<div></div>");
+	link.addClass("hov");
+	link.css("left", tag.offset().left );
+	link.css("top", tag.offset().top + 15 );
+	link.css("padding", "2px 3px" );
+	link.text("remove " + name);
+	$("#removes").append(link);
+	link.bind("click", function(event) { 
+		tag.replaceWith(tag.text());
+		$(this).remove();
+	});
+}
+
+function highlight_text(e) { 
+	sel = window.getSelection();
+	range = sel.getRangeAt(0);
+	/* printmsg(range.startContainer.parentNode.nodeName + ": " + range.startOffset + " - " + range.endContainer.parentNode.nodeName + ": " + range.endOffset, "#comment"); */
+	
+	if (range.collapsed) {
+		/* printmsg("Nothing selected"); */
+		return;
+	} else if (range.startContainer.parentNode.nodeName != range.endContainer.parentNode.nodeName) {
+		printmsg("Overlap detected");
+		return;
+	} else {
+		// Check nesting by looking at parent node
+		parent = range.startContainer.parentNode.nodeName;
+		var nested = false;
+		$.each(tags, function(name, color) {
+			if (name.toUpperCase() == parent.toUpperCase()) { // Check for inner overlap
+				nested = true;
+			}
+			$(name).each(function() { // Check for outer overlap
+				if (sel.containsNode(this, true))
+					nested = true;
+			});
+		});
+		if (nested) {
+			printmsg("Nesting detected");
+			return;
+		}
+	}
+	
+	// No problems, so tag it!
+
+	links = $("#links");
+	links.css("left", e.pageX - 10 );
+	links.css("top", e.pageY - 15 );
+	links.show();
+	var link;
+	
+	var surround = function(elem) {
+		link = document.createElement(elem);
+		range.surroundContents(link);
+		delete_link(link, elem);
+	};
+	
+	get_tag(surround);
+}
+
+function get_tag(fn) {
+	$(".tag").each(function(tag) {
+		tag = $(this);
+		tag.click(function() {
+			fn(tag.html());
+			hide_links();
+		});
+	});
+}
+
+function hide_links() {
+	links = $("#links");
+	links.css("left", -500 );
+	links.css("top", -500 );
+	links.hide();
+	$(".tag").each(function(tag) {
+		$(this).unbind();
+	});
+}
+
+function printmsg(str, buffer) {
+	if (!buffer) buffer = "#error";
+	$(buffer).html(str);
+	$(buffer).show();
+	$(buffer).fadeOut(2000);
+}
+
+function sendajax() {
+	$.post("/post", { data: $("#capture").html() }, function(result){
+	    $('#result').text(result);
+	  }, "text");
+}
+
+function sendnormal(f) {
+	$("#tagformdata").val($("#capture").html());
+	f.form.submit();
+}
+</script>
+{% endblock %}
+
+{% block title %}HIDE v1.5: {{ row.title }}{% endblock %}
+
+{% block content %}
+
+<div id="edit">
+<form method="post" action=".">
+{% csrf_token %}
+<table>
+  <tr>
+    <td> Title for document </td>
+    <td><input type="text" name="title" value=""></td>
+  </tr>
+  <tr>
+    <td> Tags for document </td>
+{% autoescape off %}
+    <td><input type="text" name="tags" style="width:300px;" value=""></td>
+{% endautoescape %}
+  </tr>
+  <tr>
+    <td> Text </td>
+    <td><textarea style="width:600px; height:600px;" name="text"></textarea></td>
+  </tr>
+</table>
+<input type="submit"/>
+</form>
+</div>
+
+{% endblock %}
