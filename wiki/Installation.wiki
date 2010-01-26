@@ -1,0 +1,91 @@
+=Overview=
+HIDE is a [http://djangoproject.com Django] application with a [http://couchdb.apache.org CouchDB] document store. We recommend installing the latest versions of Django and CouchDB from source.
+
+=Installation Instructions=
+* Install CouchDB. (details coming soon)
+* Install the Django Framework. (details coming soon)
+* Create a Django project and reference the HIDE application.
+* Download the HIDE application from source.
+
+==Creating a Django Project==
+Django provides some command line utilities for managing the directory structure necessary to create a Django project. 
+
+Open up a command line and move to the top-level directory where you want to install the Django project. Below is an example:
+{{{
+cd /path/to/Code
+django-admin.py startproject hide_proj
+}}}
+Replace the /path/to/ with the destination directory you prefer.
+
+This will create a directory with the necessary files for the `hide_proj` Django project.
+
+You know need to inform Django where the database for managing usernames and other aspects of the system. Open the `settings.py` file in the `nnexus_proj` directory and modify it to read:
+{{{
+DATABASE_ENGINE = 'sqlite3'           
+DATABASE_NAME = '/path/to/Code/hide_proj/hide.db'       
+}}}
+You may safely ignore the other DATABASE* lines.
+
+==Enable Django to serve site media==
+Site media refers to stylesheets (css), javascript and images that are necessary for some user interface aspects of HIDE. This section outlines how to enable Django to serve this data. Note: This is not recommended for a production environment. If you are installing this system for multiple users you will need to [http://docs.djangoproject.com/en/dev/howto/deployment/ configure Django to work with a web server]. We recommend [http://httpd.apache.org/ Apache HTTP Server].
+
+Modify `settings.py`:
+{{{
+MEDIA_ROOT = '/path/to/Code/hide_proj/media'
+}}}
+
+==Installing and Activating the HIDE application==
+After creating a Django project it is easy to activate the HIDE application by placing it in a directory below the `/path/to/Code/hide_proj` directory and by modifying the `settings.py` file of the created Django project.
+
+* Download the latest version of HIDE to the hide_proj directory.
+{{{
+svn checkout http://hide-emory.googlecode.com/svn/trunk/ hide-emory
+}}}
+Note: this link will allow you to run `svn update` periodically to obtain the latest versions of the software. It will not allow you to commit updates to the code. If you wish to contribute to the system, please contact [http://mathcs.emory.edu/~jgardn3 James Gardner].
+
+===Configure the `settings.py` file===
+* Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
+{{{
+'hide_proj.hide',
+'registration',
+}}}
+
+* Configure HIDE to access the CouchDB by adding the following line:
+{{{
+COUCHDB_SERVER = 'http://127.0.0.1:5984'
+}}}
+If you configured CouchDB with a password, then add the following lines:
+{{{
+COUCHDB_USER = 'your_username'
+COUCHDB_PASS = 'your_password'
+}}}
+
+* Let HIDE know where the underlying software powering the user interface is by adding the following lines:
+{{{
+HIDELIB = '/path/to/hide-emory/lib/'
+EMORYCRFLIB = '/path/to/EMORYCRF/'
+CRF_MODEL_DIR = '/path/to/crfmodels/'
+}}}
+Change `/path/to` to the locations you installed the HIDE libraries and where you want to install the crf models created by training the AutoLabeler.
+
+
+===Configure the `urls.py` file===
+An example urls.py file follows:
+{{{
+from django.conf.urls.defaults import *
+
+# Uncomment the next two lines to enable the admin:
+from django.contrib import admin
+from django.conf import settings
+admin.autodiscover()
+
+urlpatterns = patterns('',
+   (r'^hide/', include('hide.urls')),
+   (r'^admin/', include(admin.site.urls)),
+   (r'^accounts/', include('registration.urls')),
+   (r'^site_media/(?P<path>.*)$', 'django.views.static.serve', #enables site_media
+   {'document_root': settings.MEDIA_ROOT}),
+)
+}}}
+
+Refer to the [http://docs.djangoproject.com/en/dev/ Django docs] for more information on configuring the `urls.py` for your purposes.
