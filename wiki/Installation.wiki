@@ -2,10 +2,13 @@
 HIDE is a [http://djangoproject.com Django] application with a [http://couchdb.apache.org CouchDB] document store. We recommend installing the latest versions of Django and CouchDB from source.
 
 =Installation Instructions=
+Overview of installation:
   * Install CouchDB. (details coming soon)
   * Install the Django Framework. (details coming soon)
   * Create a Django project and reference the HIDE application.
   * Download the HIDE application from source.
+  * Activate the HIDE application in the Django project.
+  * Configure HIDE to communicate with CouchDB and the underlying anonymization and extraction utilities.
 
 ==Creating a Django Project==
 Django provides some command line utilities for managing the directory structure necessary to create a Django project. 
@@ -54,11 +57,12 @@ Note: this link will allow you to run `svn update` periodically to obtain the la
 {{{
 COUCHDB_SERVER = 'http://127.0.0.1:5984'
 }}}
-If you configured CouchDB with a password, then add the following lines:
-{{{
+
+  If you configured CouchDB with a password, then add the following lines:
+  {{{
 COUCHDB_USER = 'your_username'
 COUCHDB_PASS = 'your_password'
-}}}
+  }}}
 
   * Let HIDE know where the underlying software powering the user interface is by adding the following lines:
 {{{
@@ -66,7 +70,7 @@ HIDELIB = '/path/to/hide-emory/lib/'
 EMORYCRFLIB = '/path/to/EMORYCRF/'
 CRF_MODEL_DIR = '/path/to/crfmodels/'
 }}}
-Change `/path/to` to the locations you installed the HIDE libraries and where you want to install the crf models created by training the AutoLabeler.
+Change `/path/to` to the locations you installed the HIDE libraries and where you want to save the CRF models created by training the AutoLabeler.
 
 
 ===Configure the `urls.py` file===
@@ -89,3 +93,5 @@ urlpatterns = patterns('',
 }}}
 
 Refer to the [http://docs.djangoproject.com/en/dev/ Django docs] for more information on configuring the `urls.py` for your purposes.
+
+If anything is missing from this document or following the instructions does not work, please do not hesitate to contact [http://mathcs.emory.edu/~jgardn3/ James Gardner].
