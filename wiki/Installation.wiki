@@ -2,10 +2,10 @@
 HIDE is a [http://djangoproject.com Django] application with a [http://couchdb.apache.org CouchDB] document store. We recommend installing the latest versions of Django and CouchDB from source.
 
 =Installation Instructions=
-* Install CouchDB. (details coming soon)
-* Install the Django Framework. (details coming soon)
-* Create a Django project and reference the HIDE application.
-* Download the HIDE application from source.
+  * Install CouchDB. (details coming soon)
+  * Install the Django Framework. (details coming soon)
+  * Create a Django project and reference the HIDE application.
+  * Download the HIDE application from source.
 
 ==Creating a Django Project==
 Django provides some command line utilities for managing the directory structure necessary to create a Django project. 
@@ -44,13 +44,13 @@ svn checkout http://hide-emory.googlecode.com/svn/trunk/ hide-emory
 Note: this link will allow you to run `svn update` periodically to obtain the latest versions of the software. It will not allow you to commit updates to the code. If you wish to contribute to the system, please contact [http://mathcs.emory.edu/~jgardn3 James Gardner].
 
 ===Configure the `settings.py` file===
-* Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
+  * Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
 {{{
 'hide_proj.hide',
 'registration',
 }}}
 
-* Configure HIDE to access the CouchDB by adding the following line:
+  * Configure HIDE to access the CouchDB by adding the following line:
 {{{
 COUCHDB_SERVER = 'http://127.0.0.1:5984'
 }}}
@@ -60,7 +60,7 @@ COUCHDB_USER = 'your_username'
 COUCHDB_PASS = 'your_password'
 }}}
 
-* Let HIDE know where the underlying software powering the user interface is by adding the following lines:
+  * Let HIDE know where the underlying software powering the user interface is by adding the following lines:
 {{{
 HIDELIB = '/path/to/hide-emory/lib/'
 EMORYCRFLIB = '/path/to/EMORYCRF/'
