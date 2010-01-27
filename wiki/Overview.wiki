@@ -3,4 +3,4 @@
 
 HIDE is a [http://www.djangoproject.com/ Django] application using a [http://couchdb.apache.org/ CouchDB] document store. Here are the [Installation installation instructions].
 
-HIDE is currently under development by [http://www.mathcs.emory.edu/~jgardn3 James Gardner] at [http://www.emory.edu Emory University].
+HIDE is currently under development by [http://www.mathcs.emory.edu/~jgardn3 James Gardner] under the direction of [http://www.mathcs.emory.edu/~lxiong/ Li Xiong] at [http://www.emory.edu Emory University].
