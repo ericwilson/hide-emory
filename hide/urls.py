@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-urlpatterns = patterns('couchms.hide.views',
+urlpatterns = patterns('hide.views',
     (r'^doc/(?P<id>\w+)/','detail'),
     (r'^$','index'), 
     (r'^list/$', 'objlist'),

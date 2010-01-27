@@ -104,7 +104,8 @@ def SGMLToMallet ( sgml ):
 	#p.close()
 	#return p.getOutput()
 	#print "SGMLToMallet " + sgml
-	path= HIDELIB + "/sgml2mallet-stdin.pl"
+	path= HIDELIB + "sgml2mallet-stdin.pl"
+	print "[" + path + "]"
 	#add features to the mallet file
 	proc = subprocess.Popen("perl " + path,
 			shell=True,
@@ -122,7 +123,8 @@ def SGMLToMallet ( sgml ):
 def MalletToSGML ( mallet ):
 	#for now we use the old perl code to this conversion and return the result
 	#print "MalletToSGML: " + mallet
-	path= HIDELIB + "mallet2sgml-stdin.pl"
+	path = HIDELIB + "mallet2sgml-stdin.pl"
+	print "[" + path + "]"
 	#add features to the mallet file
 	proc = subprocess.Popen("perl " + path,
 			shell=True,
