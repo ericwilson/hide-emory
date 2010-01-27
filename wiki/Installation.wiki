@@ -39,6 +39,7 @@ MEDIA_ROOT = '/path/to/Code/hide_proj/media'
 ADMIN_MEDIA_PREFIX = '/media/'
 }}}
 
+See the example below how to update the `urls.py` file to serve the site media.
 
 ==Installing and Activating the HIDE application==
 After creating a Django project it is easy to activate the HIDE application by placing it in a directory below the `/path/to/Code/hide_proj` directory and by modifying the `settings.py` file of the created Django project.
