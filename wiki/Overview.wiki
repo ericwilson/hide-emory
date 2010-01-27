@@ -4,3 +4,12 @@
 HIDE is a [http://www.djangoproject.com/ Django] application using a [http://couchdb.apache.org/ CouchDB] document store. Here are the [Installation installation instructions].
 
 HIDE is currently under development by [http://www.mathcs.emory.edu/~jgardn3 James Gardner] under the direction of [http://www.mathcs.emory.edu/~lxiong/ Li Xiong] at [http://www.emory.edu Emory University].
+
+==Publications==
+  * Li Xiong, James Gardner, Pawel Jurczyk, James J. Lu. Privacy Preserving Information Discovery on EHRs. In Information Discovery on Electronic Health Records, Ed. Vagelis Hristidis. Chapman and Hall/CRC, pp. 197--225, 2009.
+
+  * James Gardner and Li Xiong. An integrated framework for de-identifying unstructured medical data. Data and Knowledge Engineering, 68(12), pp. 1441--1451, 2009, doi:10.1016/j.datak.2009.07.006.
+
+  * James Gardner, Kanwei Li, Li Xiong and James J. Lu. HIDE: Heterogeneous Information DE-identification (demo track). 12th International Conference on Extending Database Technology (EDBT), March, 2009.
+
+  * James Gardner and Li Xiong. HIDE: A Health Information DE-identification System. In 21st IEEE International Symposium on Computer-Based Medical Systems (CBMS), June, 2008. 
