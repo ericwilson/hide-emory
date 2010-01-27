@@ -110,6 +110,7 @@ def deidentify( request, id ):
 	
     html = doc['text'].replace("<br>", "<br/>")
 	
+    #TODO update this to read from a configuration file
     repl = { 'name' : "***NAME***", 
 	    'mrn' : "***MRN***",
         'age' : "***AGE***",
@@ -122,6 +123,7 @@ def deidentify( request, id ):
 	
     doc['text'] = deid
 	
+    #TODO update this to read from a configuration file
     tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
     context = {
 	    'row':doc,
@@ -258,6 +260,7 @@ def autolabel( request, id ):
 	#set the value as the text of the object
 	
 	#display the object
+        #TODO update this to read from a configuration file
 	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
@@ -278,6 +281,7 @@ def detail(request,id):
 		doc['tags'] = request.POST['newtags']
 	db[id] = doc
 	doc['id'] = id
+        #TODO update this to read from a configuration file
 	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
@@ -297,6 +301,7 @@ def anondoc(request,id):
 		doc['tags'] = request.POST['newtags']
 	deiddb[id] = doc
 	doc['id'] = id
+        #TODO update this to read from a configuration file
 	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
@@ -490,6 +495,7 @@ def anonymize(request, tag):
 			# value was extracted.
 			keyid = str(docmap[key])
 			#print key + " -> " + keyid
+                        #TODO update this to read from a configuration file
 			repl = { 'name' : "***NAME***",
 			'mrn' : "***MRN***",
 			'age' : subvals[keyid]['age'],
