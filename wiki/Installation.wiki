@@ -9,7 +9,7 @@ Overview of installation:
   * Create a Django project and reference the HIDE application.
   * Download the HIDE application from source.
   * Activate the HIDE application in the Django project.
-  * Configure HIDE to communicate with CouchDB and the underlying anonymization and extraction utilities.
+  * Configure HIDE to communicate with CouchDB and the underlying anonymization and extraction utilities. Note: some of these utilities require special Perl modules. We are currently compiling a complete list of required modules for both Python and Perl.
 
 ==Creating a Django Project==
 Django provides some command line utilities for managing the directory structure necessary to create a Django project. 
