@@ -31,12 +31,12 @@ class Object(Document):
 	text = StringProperty()
 	tags = StringProperty()
 
+HIDELIB = getattr(settings,'HIDELIB', '/default/path/')
 EMORYCRFLIB = getattr(settings, 'EMORYCRFLIB', '/tmp/')
 CRFMODELDIR = getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
 if not os.path.isdir(CRFMODELDIR):
    os.mkdir( CRFMODELDIR )
 
-HIDELIB = getattr(settings,'HIDELIB', '/default/path/')
 SERVER = Server(getattr(settings,'COUCHDB_SERVER','http://127.0.0.1:5984'))
 COUCHUSER = getattr(settings, 'COUCHDB_USER', 'none')
 if ( COUCHUSER != "none" ):
@@ -142,7 +142,6 @@ def autolabel( request, id ):
 	   #Display a list of the crf models to choose from
 	   context = []
 	   for fileName in os.listdir ( CRFMODELDIR ):
-	      print fileName 
 	      if re.search('\.crf$', fileName):
 	         context.append(fileName)
 	   return render_to_response('hide/crfpicker.html', 
@@ -168,7 +167,6 @@ def autolabel( request, id ):
 	f.write(mallet)
 	f.close()
 	
-	HIDELIB = "/Users/dryice/Code/hide/lib"
 	HIDEADDFEATURES = HIDELIB + "/HIDE-addfeatures.pl"
 
 	
@@ -227,8 +225,8 @@ def autolabel( request, id ):
 	rows = mallet.split("\n")
 	labels = resultlabels.split("\n")
 	
-	print "rows length: " + str(len(rows))
-	print "labels length: " + str(len(labels)) #emory crf prints one extra newline at the end. 
+	#print "rows length: " + str(len(rows))
+	#print "labels length: " + str(len(labels)) #emory crf prints one extra newline at the end. 
 	
 	resultsmallet = ""
 	
@@ -333,7 +331,6 @@ def train(request,tag):
 			#	options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
 			mallettext += SGMLToMallet(html)
 		
-		HIDELIB = "/Users/dryice/Code/hide/lib"
 		HIDEADDFEATURES = HIDELIB + "/HIDE-addfeatures.pl"
 		
 		#write to the tmp dir
@@ -461,22 +458,19 @@ def anonymize(request, tag):
 		# or just work over a pipe.
 
 		context['error'] = "anonymizing " + stringtoanon
-
+		execme = "java -cp \"" + HIDELIB + "\" edu.emory.mathcs.Main 2"
 		#do the kanonymization over system call
-		proc = subprocess.Popen('java edu.emory.mathcs.Main 2',
+		proc = subprocess.Popen(execme,
 			shell=True,
 			stdin=subprocess.PIPE,
 			stdout=subprocess.PIPE,
 			stderr=subprocess.PIPE,
 			)
 		stdout_value, stderr_value = proc.communicate(stringtoanon)
-		#print stdout_value
-		#print stderr_value
+
 		#print '\tpass through:', repr(stdout_value)
 		#print '\tstderr:', repr(stderr_value)
 
-		print "DONE WITH JAVA"
-		
 		subvals = dict()
 		
 		anonlist = str(stdout_value).split('\n')
@@ -486,7 +480,6 @@ def anonymize(request, tag):
 		   if ( len(vals) > 1 ):
 		      values = dict()
 		      gender = fixgender(vals[1])
-		      print "[" + gender + "]"
 		      values['age'] = vals[0]
 		      values['gender'] = gender
 		      subvals[vals[2]] = values		   
@@ -597,13 +590,6 @@ def getalltags( db ):
 	keys.sort()
 	return keys
 	
-def extract( request, id ):
-	#this function reads in the document with id from the database and uses
-	# a CRF to predict the labels
-	# the result is showed on the screen and the user has the ability to modify
-	# the results then save the document
-	print "extract"
-
 
 def randomReport( request ):
 	#this randomly generates a record for the hide system
