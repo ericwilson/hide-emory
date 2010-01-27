@@ -1,3 +1,4 @@
+#labels Featured
 =Overview=
 HIDE is a [http://djangoproject.com Django] application with a [http://couchdb.apache.org CouchDB] document store. We recommend installing the latest versions of Django and CouchDB from source.
 
