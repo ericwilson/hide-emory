@@ -28,7 +28,7 @@ You know need to inform Django where the database for managing usernames and oth
 DATABASE_ENGINE = 'sqlite3'           
 DATABASE_NAME = '/path/to/Code/hide_proj/hide.db'       
 }}}
-You may safely ignore the other DATABASE* lines.
+You may safely ignore the other `DATABASE*` lines.
 
 ==Enable Django to serve site media==
 Site media refers to stylesheets (css), javascript and images that are necessary for some user interface aspects of HIDE. This section outlines how to enable Django to serve this data. Note: This is not recommended for a production environment. If you are installing this system for multiple users you will need to [http://docs.djangoproject.com/en/dev/howto/deployment/ configure Django to work with a web server]. We recommend [http://httpd.apache.org/ Apache HTTP Server].
