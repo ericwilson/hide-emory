@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{block.super}}
+<style type="text/css" media="screen">
+#filelist {
+	background-color: white;
+        padding: 10px;
+        width: 700px;
+        /*line-height: 200%;*/
+	margin-left: auto;
+	margin-right: auto;
+        border: 5px solid #ccc;
+}
+</style>
+{% endblock %}
+
+{% block title %}
+HIDE v1.5
+{% endblock %}
+
+{% block content %}
+<div id="filelist">
+<ol>
+  {% for row in rows %}
+  <li><a id="title" href="/hide/doc/{{ row.id }}/">{{ row.value.title }}</a>
+        tags: {{ row.value.tags }}
+</li>
+  {% endfor %}
+</ol>
+</div>
+{% endblock %}
+
