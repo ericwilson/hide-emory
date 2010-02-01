@@ -14,4 +14,4 @@ HIDE is currently under development by [http://www.mathcs.emory.edu/~jgardn3 Jam
 
   * James Gardner and Li Xiong. HIDE: A Health Information DE-identification System. In 21st IEEE International Symposium on Computer-Based Medical Systems (CBMS), June, 2008. 
 
-© Emory University. 2010. All rights reserved.
+©2010 Emory University. All rights reserved.

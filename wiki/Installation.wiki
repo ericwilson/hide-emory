@@ -109,4 +109,4 @@ Refer to the [http://docs.djangoproject.com/en/dev/ Django docs] for more inform
 
 If anything is missing from this document or following the instructions does not work, please do not hesitate to contact [http://mathcs.emory.edu/~jgardn3/ James Gardner].
 
-© Emory University. 2010. All rights reserved.
+©2010 Emory University. All rights reserved.
