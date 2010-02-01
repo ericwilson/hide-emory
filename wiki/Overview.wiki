@@ -13,3 +13,5 @@ HIDE is currently under development by [http://www.mathcs.emory.edu/~jgardn3 Jam
   * James Gardner, Kanwei Li, Li Xiong and James J. Lu. HIDE: Heterogeneous Information DE-identification (demo track). 12th International Conference on Extending Database Technology (EDBT), March, 2009.
 
   * James Gardner and Li Xiong. HIDE: A Health Information DE-identification System. In 21st IEEE International Symposium on Computer-Based Medical Systems (CBMS), June, 2008. 
+
+© Emory University. 2010. All rights reserved.
