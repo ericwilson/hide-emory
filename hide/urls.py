@@ -14,5 +14,6 @@ urlpatterns = patterns('hide.views',
 	(r'^deidentify/(?P<id>\w+)$', 'deidentify'),
 	(r'^add/$', 'add'),
 	(r'^anondoc/(?P<id>\w+)/', 'anondoc'),
+	(r'^delete_label/(?P<tag>\w+)/', 'delete_label'),
 	#    (r'^reset','reset'), 
 )
