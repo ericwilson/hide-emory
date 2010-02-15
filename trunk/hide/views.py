@@ -15,11 +15,7 @@ import simplejson as json
 #from BeautifulSoup import BeautifulSoup
 import re
 import os
-#import SEQL
-from SEQL import SGMLToMallet
-from SEQL import MalletToSGML
-from SEQL import extractTags
-from SEQL import testTemplate
+from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig
 from tidylib import tidy_document
 import subprocess
 
@@ -42,6 +38,15 @@ COUCHUSER = getattr(settings, 'COUCHDB_USER', 'none')
 if ( COUCHUSER != "none" ):
    COUCHPASSWD = getattr(settings, 'COUCHDB_PASS', 'none')
    SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
+
+HIDECONFIG = getattr(settings, 'HIDECONFIG', '/default/nothing.xml')
+
+loadConfig( HIDECONFIG )
+REPLACEMENTS = getReplacements()
+LEGEND = getLegend()
+
+print REPLACEMENTS
+print LEGEND
 
 db = SERVER.get_or_create_db('hide_objects')
 deiddb = SERVER.get_or_create_db('hide_deid')
@@ -72,18 +77,105 @@ def objlist(request):
 		return HttpResponseRedirect(u"/accounts/login/")
 
 def add (request):
-    if request.method == "POST":
-	   Object.set_db(db)
-	   object = Object(
-	      title = request.POST['title'],
-		  text = request.POST['text'],
-		  tags = request.POST['tags']
-		  )
-	   id = object.save()
-	   return HttpResponseRedirect(u"/hide/list/")
-    else:
-	   context = {}
-	   return render_to_response('hide/newdoc.html', context, context_instance=RequestContext(request))
+   if request.method == "POST":
+#if the user specified an MIT file
+      if 'mitfile' in request.POST:
+         print "importing MIT file"
+	 f = request.FILES['file']
+	 handle_uploaded_mit_file(f)
+      
+      elif 'xmlfile' in request.POST:
+         print "importing XML file"
+	 f = request.FILES['file']
+	 handle_uploaded_xml_file(f)
+	
+      else:
+         print "we are just adding a manual document"
+         Object.set_db(db)
+         object = Object(
+            title = request.POST['title'],
+            text = request.POST['text'],
+            tags = request.POST['tags']
+         )
+         id = object.save()
+      return HttpResponseRedirect(u"/hide/list/")
+   else:
+      context = {}
+      return render_to_response('hide/newdoc.html', context, context_instance=RequestContext(request))
+
+
+#this function handles an uploaded xml file. The xml should be of the form
+#<records>
+#<record>
+#<pid>number</pid>
+#<rid>number</rid>
+#<content>The Text of the Record here</content>
+#</records>
+from xml.sax import make_parser
+from xml.sax.handler import ContentHandler 
+from JSAXParser import ReportXMLHandler
+
+def handle_uploaded_xml_file(f):
+   print "parsing " + f.name
+   parser = make_parser()
+   curHandler = ReportXMLHandler()
+   parser.setContentHandler(curHandler)
+   parser.parse(f)
+   reports = curHandler.reports
+   #print reports
+   for k,v in sorted(reports.iteritems()):
+      for x,y in sorted(v.iteritems()):
+         #create an object and put it in the couchdb
+         print k + "." + x +"->",
+	 print y
+#   print reports.keys()
+#   print reports.keys().sort()
+#   print curHandler.content
+   
+def handle_uploaded_mit_file(f):
+   print "parsing " + f.name
+   #print "Content:"
+   #loop through the file and generate an object for each and save it to the
+   # CouchDB
+#START_OF_RECORD=1||||1||||
+#   O: 58 YEAR OLD FEMALE ADMITTED IN TRANSFER FROM CALVERT HOSPITAL FOR MENTAL STATUS CHANGES POST FALL AT HOME AND CONTINUED HYPOTENSION AT CALVERT HOSPITAL REQUIRING DOPAMINE; PMH: CAD, S/P MI 1992; LCX PTCA; 3V CABG WITH MVR; CMP; AFIB- AV NODE ABLATION; PERM PACER- DDD MODE; PULM HTN; PVD; NIDDM; HPI: 2 WEEK HISTORY LEG WEAKNESS; 7/22 FOUND BY HUSBAND ON FLOOR- AWAKE, BUT MENTAL STATUS CHANGES; TO CALVERT HOSPITAL ER- TO THEIR ICU; HEAD CT- NEG FOR BLEED; VQ SCAN- NEG FOR PE; ECHO- GLOBAL HYPOKINESIS; EF EST 20%; R/O FOR MI; DIGOXIN TOXIC WITH HYPERKALEMIA- KAYEXALATE, DEXTROSE, INSULIN; RENAL INSUFFICIENCY- BUN 54, CR 2.8; INR 7 ( ON COUMADIN AT HOME); 7/23 AT CALVERT- 2 FFP, 2 UNITS PRBC, VITAMIN K; REFERRED TO GH. 
+#    ARRIVED IN TRANSFER APPROX. 2130; IN NO MAJOR DISTRESS; DOPAMINE TAPER, THEN DC; NS FLUID BOLUS GIVEN WITH IMPROVEMENT IN BP RANGE; SEE FLOW SHEET SECTION FOR CLINICAL INFORMATION; A: NO HEMODYNAMIC COMPROMISE SINCE TRANSFER; TOLERATING DOPAMINE DC; P: TREND BP RANGE; OBSERVE FOR PRECIPITOUS HYPOTENSION.
+#
+#    ||||END_OF_RECORD
+#loop until we find start of record.
+   currentRecord = ""
+   name = ""
+   for chunk in f.chunks():
+      #split the chunk into lines and keep the whitespace
+      lines = chunk.splitlines(1)
+      for i in range(len(lines)):
+         print "LOOKING AT LINE " + str(i)
+         start = re.search( 'START_OF_RECORD=(\\d+)\|\|\|\|(\\d+)\|\|\|\|', lines[i])
+	 end = re.search( '\|\|\|\|END_OF_RECORD', lines[i] )
+         if start:
+	   # print "found record start at line " + str(i)
+	    name = "MIT-rec-" + start.group(1) + "-" + start.group(2)
+	   # print "Processing " + name
+	    currentRecord = ""
+	 elif end:
+	  #  print "found end of record at line " + str(i)
+	    print "adding " + name + " to CouchDB"
+            Object.set_db(db)
+            object = Object(
+               title = name,
+               text = currentRecord,
+               tags = 'PhysioNet' 
+            )
+            #print "[" + currentRecord + "]" 
+            id = object.save()
+	    print id
+            name = ""
+            currentRecord = "" 
+	 else:
+	    currentRecord += lines[i]
+	    
+#      print chunk
+
 
 
 @login_required(redirect_field_name='next')
@@ -107,28 +199,37 @@ def deidentify( request, id ):
     except ResourceNotFound:
 	    raise Http404
     doc['id'] = id
-	
     html = doc['text'].replace("<br>", "<br/>")
+#    repl = {'name' : "***NAME***", 
+#	    'mrn' : "***MRN***",
+#            'age' : "***AGE***",
+#            'gender' : "***GENDER***",
+#	    'date' : "***DATE***",
+#	    'accountnum' : "***accountnum***",
+#	    }
+
+
+    
 	
-    repl = { 'name' : "***NAME***", 
-	    'mrn' : "***MRN***",
-        'age' : "***AGE***",
-		'gender' : "***GENDER***",
-		'date' : "***DATE***",
-		'accountnum' : "***accountnum***",
-		}
-	
-    deid = testTemplate( "<object>" + html + "</object>", repl )
+    deid = doReplacement( "<object>" + html + "</object>", REPLACEMENTS )
 	
     doc['text'] = deid
 	
-    tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
+#    tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
     context = {
 	    'row':doc,
-		'displaytags':tags,
+	    'displaytags':LEGEND,
 		}
     return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 	
+def delete_label ( request, tag ):
+   objects = db.view('tags/tags')
+   for obj in objects:
+      if obj['key'] == tag:
+         id = obj['id']
+         print "deleting " + str(id)
+         del db[id]
+   
 	
 def autolabel( request, id ):
 	if not request.user.is_authenticated():
@@ -258,10 +359,10 @@ def autolabel( request, id ):
 	#set the value as the text of the object
 	
 	#display the object
-	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
+#	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
-		'displaytags':tags,
+		'displaytags':LEGEND,
 	}
 	return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -278,10 +379,10 @@ def detail(request,id):
 		doc['tags'] = request.POST['newtags']
 	db[id] = doc
 	doc['id'] = id
-	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
+#	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
-		'displaytags':tags,
+		'displaytags':LEGEND,
 		}
 	return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -297,10 +398,10 @@ def anondoc(request,id):
 		doc['tags'] = request.POST['newtags']
 	deiddb[id] = doc
 	doc['id'] = id
-	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
+	#tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
-		'displaytags':tags,
+		'displaytags':LEGEND,
 		}
 	return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -404,6 +505,7 @@ def anonymize(request, tag):
 			#options = dict(output_xhtml=1, add_xml_decl=0, indent=1, tidy_mark=0)
 			xhtml, errors = tidy_document( html,
 				options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
+			#TODO change this to read from the config file
 			tagstoa = [ 'age', 'gender', 'name' ]
 			extracted = extractTags(xhtml, tagstoa)
 			vals = extracted.split('\t')
@@ -490,20 +592,14 @@ def anonymize(request, tag):
 			# value was extracted.
 			keyid = str(docmap[key])
 			#print key + " -> " + keyid
-			repl = { 'name' : "***NAME***",
-			'mrn' : "***MRN***",
-			'age' : subvals[keyid]['age'],
-			'gender' : subvals[keyid]['gender'],
-			'date' : "***DATE***",
-			'accountnum' : "***accountnum***",
-			}
+			repl = REPLACEMENTS
+			repl['age'] = subvals[keyid]['age']
+			repl['gender'] = subvals[keyid]['gender']
 			text = object['value']['text']
 			html = "<object>" + text.replace("<br>", "<br/>") + "</object>"
-			#print "tidying up\n" + html
-			#options = dict(output_xhtml=1, add_xml_decl=0, indent=1, tidy_mark=0)
 			sgml, errors = tidy_document( html,
 				options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-			deid = testTemplate( sgml, repl )
+			deid = doReplacement( sgml, repl )
 			#print deid
 			# we should store the deid content now in the hide_deid database
 			Object.set_db(deiddb)

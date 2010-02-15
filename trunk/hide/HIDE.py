@@ -5,12 +5,16 @@ import urllib
 import subprocess
 from tidylib import tidy_document
 from django.conf import settings
+from elementtree import ElementTree
+
+
 
 
 from xml.parsers import expat
 
 #these variables should be set in order for the HIDE and SEQL module to work correctly
 HIDELIB = getattr(settings,'HIDELIB', '/default/path/')
+#CONFIGTREE = ElementTree.parse(getattr(settings,'HIDECONFIG', '/nothing/'))
 
 class MalletParser:
 	def __init__(self):
@@ -58,23 +62,45 @@ class MalletParser:
 	
 				
 							
-										
-													        	
+#Configuration
+def loadConfig( filename ):
+   global CONFIGTREE
+   CONFIGTREE = ElementTree.parse(filename)
+
+def getReplacements():
+   #CONFIGTREE contains the ElementTree of the XML file specified 
+   legend = dict()
+   root = CONFIGTREE.getroot()
+   for l in root.findall('labels/label'):
+      name = l.find('name').text
+      repl = l.find('replacement').text
+      legend[name] = repl 
+   return legend
+
+
+def getLegend():
+   repl = dict()
+   root = CONFIGTREE.getroot()
+   for l in root.findall('gui/tag'):
+      name = l.find('label').text
+      color = l.find('color').text
+      repl[name] = color
+   return repl
+
+
 def replaceTags( nodelist, parent, repl, replvals ):
-		for subnode in nodelist:
-			if (subnode.nodeType == subnode.ELEMENT_NODE):
-				#print "replacing " + str(subnode.nodeValue)
-				#subnode.nodeValue = "REPLACED"
-				replaceTags( subnode.childNodes, subnode, repl, replvals )
-			else:
-				tagname = str(parent.tagName).lower()
-				if ( tagname in repl ):
-					#print "replacing " + subnode.nodeValue + " with " + repl[tagname]
-					replvals[parent.tagName] = subnode.nodeValue
-					subnode.nodeValue = repl[tagname]
+   for subnode in nodelist:
+      if (subnode.nodeType == subnode.ELEMENT_NODE):
+         replaceTags( subnode.childNodes, subnode, repl, replvals )
+      else:
+          tagname = str(parent.tagName).lower()
+          if ( tagname in repl ):
+             #print "replacing " + subnode.nodeValue + " with " + repl[tagname]
+             replvals[parent.tagName] = subnode.nodeValue
+             subnode.nodeValue = repl[tagname]
 				
 
-def testTemplate( sgml, repl ):
+def doReplacement( sgml, repl ):
 	#p = ReplaceParser()
 	#print p.feed(sgml)
 	#p.close()
@@ -91,7 +117,7 @@ def testTemplate( sgml, repl ):
 	
 	replaceTags(dom.childNodes, dom, repl, replvals)
 	
-	#print replvals
+	print replvals
 	xmlstring = dom.toxml()
 	val = xmlstring.replace("<?xml version=\"1.0\" ?>","")
 	return val
