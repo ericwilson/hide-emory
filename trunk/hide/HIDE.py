@@ -3,18 +3,20 @@ import re
 import xml.dom.minidom
 import urllib
 import subprocess
-from tidylib import tidy_document
-from django.conf import settings
+import os
+import sys
 from elementtree import ElementTree
+from tempfile import NamedTemporaryFile
 
 
 
 
 from xml.parsers import expat
 
-#these variables should be set in order for the HIDE and SEQL module to work correctly
-HIDELIB = getattr(settings,'HIDELIB', '/default/path/')
-#CONFIGTREE = ElementTree.parse(getattr(settings,'HIDECONFIG', '/nothing/'))
+#these variables should be set in order for the HIDE module to work correctly
+#see loadConfig function.
+#HIDELIB
+#CONFIGTREE 
 
 class MalletParser:
 	def __init__(self):
@@ -65,7 +67,14 @@ class MalletParser:
 #Configuration
 def loadConfig( filename ):
    global CONFIGTREE
+   global HIDELIB
+   global EMORYCRFLIB
+   global CRFMODELDIR
    CONFIGTREE = ElementTree.parse(filename)
+   croot = CONFIGTREE.getroot()
+   HIDELIB = croot.find('hidelib').text
+   EMORYCRFLIB = croot.find('crflib').text 
+   CRFMODELDIR = croot.find('crfmodeldir').text
 
 def getReplacements():
    #CONFIGTREE contains the ElementTree of the XML file specified 
@@ -100,24 +109,10 @@ def replaceTags( nodelist, parent, repl, replvals ):
              subnode.nodeValue = repl[tagname]
 				
 
-def doReplacement( sgml, repl ):
-	#p = ReplaceParser()
-	#print p.feed(sgml)
-	#p.close()
-	#print sgml
-	
-	xhtml, errors = tidy_document( sgml,
-		options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-	#print "xhtml:" + xhtml
-	
+def doReplacement( sgml, repl, replvals ):
+	xhtml = sgml
 	dom = xml.dom.minidom.parseString(xhtml)
-	
-		
-	replvals = dict()
-	
 	replaceTags(dom.childNodes, dom, repl, replvals)
-	
-	print replvals
 	xmlstring = dom.toxml()
 	val = xmlstring.replace("<?xml version=\"1.0\" ?>","")
 	return val
@@ -131,7 +126,7 @@ def SGMLToMallet ( sgml ):
 	#return p.getOutput()
 	#print "SGMLToMallet " + sgml
 	path= HIDELIB + "sgml2mallet-stdin.pl"
-	print "[" + path + "]"
+	print >> sys.stderr, "[" + path + "]"
 	#add features to the mallet file
 	proc = subprocess.Popen("perl " + path,
 			shell=True,
@@ -150,7 +145,7 @@ def MalletToSGML ( mallet ):
 	#for now we use the old perl code to this conversion and return the result
 	#print "MalletToSGML: " + mallet
 	path = HIDELIB + "mallet2sgml-stdin.pl"
-	print "[" + path + "]"
+	print >> sys.stderr, "[" + path + "]"
 	#add features to the mallet file
 	proc = subprocess.Popen("perl " + path,
 			shell=True,
@@ -215,3 +210,88 @@ def buildTemplate( sgml, tagstoa ):
 				#print "found " + tag + " = " + value
 				extract.append(value)
 
+
+def addFeatures( mallet ):
+   #TODO - add support for passing in extra feature processing
+   #this function adds the standard features to a mallet formatted file
+   
+   tempfile = NamedTemporaryFile(delete=False)
+   tempfilename = tempfile.name
+   tempfile.write(mallet)
+   tempfile.close()
+
+   addfeatures = "perl " + HIDELIB + "/HIDE-addfeatures.pl " + tempfilename
+   print >> sys.stderr, "execing [" + addfeatures + "]"
+   proc = subprocess.Popen(addfeatures,
+      shell=True,
+      stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      )
+   stdout_value, stderr_value = proc.communicate()
+   os.unlink(tempfile.name)
+   return str(stdout_value)
+
+
+def labelMallet( modelfile, mallet ):
+   tempfile = NamedTemporaryFile(delete=False)
+   tempfile.write(mallet)
+   tempfile.close()
+
+
+   #setup the external call to EmoryCRF
+   #TODO update this to allow the user to specify the CRF to use.
+   maxmem = "1500M"
+   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
+   javaargs = "-Xmx" + maxmem + " -cp \"" + javaclasspath + "\""
+   execme = 'java ' + javaargs + " EmoryCRF --model-file " + modelfile + " " + tempfile.name
+
+   print >> sys.stderr, "executing " + execme
+
+   #open up EmoryCRF
+   proc = subprocess.Popen( execme,
+               shell=True,
+               stdout=subprocess.PIPE,
+               stderr=subprocess.PIPE,
+               )
+
+   #read output from EmoryCRF
+   stdout_value, stderr_value = proc.communicate()
+   print >> sys.stderr, stderr_value
+
+   resultlabels = stdout_value
+   #delete the created tempfile
+   os.unlink(tempfile.name)
+
+   #build the mallet file from the resulting labels and the original mallet
+   #mallet is the original
+   #resultlabels are the labels
+   rows = mallet.split("\n")
+   labels = resultlabels.split("\n")
+
+   #print "[" + str(labels) + "]"
+   print >> sys.stderr, "row len = " + str(len(rows))
+   print >> sys.stderr, "labels len = " + str(len(labels))
+
+
+#   print "label = " + str(labels)
+
+   resultsmallet = ""
+   #print "rows = " + str(rows)
+
+   for i in range(0, len(rows)):
+      r = rows[i]
+      vals = r.split(" ")
+      for v in vals:
+          #print "checking " + v
+          p = re.compile("TERM_(.*)")
+          m = p.match(v)
+          if ( m ):
+             #print m.group(0) + " " + labels[i]
+             resultsmallet += m.group(0) + " " + labels[i] + "\n"
+             break
+
+   #print "results = [" + resultsmallet + "]"
+   sgml = MalletToSGML(resultsmallet)
+   #print sgml
+   return sgml
