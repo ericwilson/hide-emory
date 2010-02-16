@@ -15,6 +15,7 @@ import simplejson as json
 #from BeautifulSoup import BeautifulSoup
 import re
 import os
+import HIDE
 from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig
 from tidylib import tidy_document
 import subprocess
@@ -27,7 +28,9 @@ class Object(Document):
 	text = StringProperty()
 	tags = StringProperty()
 
-HIDELIB = getattr(settings,'HIDELIB', '/default/path/')
+loadConfig(getattr(settings,'HIDECONFIG', 'default'))
+
+HIDELIB = HIDE.HIDELIB
 EMORYCRFLIB = getattr(settings, 'EMORYCRFLIB', '/tmp/')
 CRFMODELDIR = getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
 if not os.path.isdir(CRFMODELDIR):
