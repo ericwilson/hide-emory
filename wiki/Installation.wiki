@@ -54,6 +54,11 @@ cd /path/to/hide_proj
 ln -s /path/to/src/hide-emory/hide ./hide
 }}}
 
+Install the django-registration app from
+http://bitbucket.org/ubernostrum/django-registration
+
+Here are the [http://bitbucket.org/ubernostrum/django-registration/src/tip/INSTALL install instructions for django-registration].
+
 ===Configure the `settings.py` file===
   * Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
 {{{
