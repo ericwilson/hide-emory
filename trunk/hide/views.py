@@ -28,11 +28,13 @@ class Object(Document):
 	text = StringProperty()
 	tags = StringProperty()
 
+
+#first thing is to initialize the HIDE module from the config file
 loadConfig(getattr(settings,'HIDECONFIG', 'default'))
 
 HIDELIB = HIDE.HIDELIB
-EMORYCRFLIB = getattr(settings, 'EMORYCRFLIB', '/tmp/')
-CRFMODELDIR = getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
+EMORYCRFLIB = HIDE.EMORYCRFLIB # getattr(settings, 'EMORYCRFLIB', '/tmp/')
+CRFMODELDIR = HIDE.CRFMODELDIR # getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
 if not os.path.isdir(CRFMODELDIR):
    os.mkdir( CRFMODELDIR )
 
@@ -42,9 +44,6 @@ if ( COUCHUSER != "none" ):
    COUCHPASSWD = getattr(settings, 'COUCHDB_PASS', 'none')
    SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
 
-HIDECONFIG = getattr(settings, 'HIDECONFIG', '/default/nothing.xml')
-
-loadConfig( HIDECONFIG )
 REPLACEMENTS = getReplacements()
 LEGEND = getLegend()
 
