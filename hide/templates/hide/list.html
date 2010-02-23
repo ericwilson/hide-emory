@@ -24,8 +24,8 @@ HIDE v1.5
 <div id="filelist">
 <ol>
   {% for row in rows %}
-  <li><a id="title" href="/hide/doc/{{ row.id }}/">{{ row.value.title }}</a>
-        tags: {{ row.value.tags }}
+  <li><a id="title" href="/hide/doc/{{ row.id }}/">{{ row.value.title }}</a> 
+        tags: {{ row.value.tags }}  labels: {{row.value.labels}}
 </li>
   {% endfor %}
 </ol>

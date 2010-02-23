@@ -9,8 +9,11 @@
         padding: 10px;
         /*width: 800px;*/
         /*line-height: 200%;*/
-        margin-right: 100px;
+        /*margin-right: 100px;*/
         border: 5px solid #ccc;
+	width: 600px;
+        margin-left: auto;
+        margin-right: auto;
 }
 </style>
 
@@ -37,19 +40,20 @@ function submitform()
 jQuery(document).ready(function(){ 
 
 jQuery("#anon1").jqGrid({
-			datatype: "local", 
-			height: 250, 
-			colNames:['ID','Title'], 
-			colModel:[ 
-					{name:'id',index:'id', width:60, sorttype:"int"}, 
-					{name:'title',index:'title', width:90}, 
-				], 
-			multiselect: true, 
-			caption: "Objects for training AutoLabeler"
-			});
+                        datatype: "local", 
+                        height: 400, 
+                        colNames:['ID','Title', 'Labels'], 
+                        colModel:[ 
+                                        {name:'id',index:'id', width:60, sorttype:"int"}, 
+                                        {name:'title',index:'title', width:120}, 
+                                        {name:'labels',index:'labels', width:400}, 
+                                ], 
+                        multiselect: true, 
+                        caption: "Objects for training and/or labeling"
+                        });
 
 var mydata = [{% for key,object in objects.items %}
-	{ id:"{{forloop.counter}}", title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" },
+        { id:"{{forloop.counter}}", title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" , labels:"{{object.value.labels}}" },
 {% endfor %}];
 
 for(var i=0;i<=mydata.length;i++) {

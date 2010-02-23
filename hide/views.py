@@ -16,7 +16,7 @@ import simplejson as json
 import re
 import os
 import HIDE
-from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig
+from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig, getTags
 from tidylib import tidy_document
 import subprocess
 
@@ -72,6 +72,7 @@ def objlist(request):
 			for item in items:
 				if ( 'text' in item['value'] ):
 					item['value']['summary'] = item['value']['text'][0:100]
+					item['value']['labels'] = ", ".join(getTags(item['value']['text']))
 			context = {
 				'rows' : list(items),
 			}
@@ -129,8 +130,18 @@ def handle_uploaded_xml_file(f):
    for k,v in sorted(reports.iteritems()):
       for x,y in sorted(v.iteritems()):
          #create an object and put it in the couchdb
-         print k + "." + x +"->",
-	 print y
+	 name = "PhysioNet-" + k + "-" + x
+         print "adding " + name + " to CouchDB"
+         #print y
+         Object.set_db(db)
+         object = Object(
+              title = name,
+              text = y,
+              tags = 'PhysioNet' 
+         )
+         #print "[" + currentRecord + "]" 
+         id = object.save()
+	 print object['_id']
 #   print reports.keys()
 #   print reports.keys().sort()
 #   print curHandler.content
@@ -210,11 +221,8 @@ def deidentify( request, id ):
 #	    'date' : "***DATE***",
 #	    'accountnum' : "***accountnum***",
 #	    }
-
-
-    
-	
-    deid = doReplacement( "<object>" + html + "</object>", REPLACEMENTS )
+    repl = dict()
+    deid = doReplacement( "<object>" + html + "</object>", REPLACEMENTS, repl )
 	
     doc['text'] = deid
 	
@@ -414,6 +422,7 @@ def train(request,tag):
 	trainset = dict()
 	for obj in objects:
 		if obj['key'] == tag:
+		        obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
 			trainset[obj['id']] = obj
 	
 	context = {
