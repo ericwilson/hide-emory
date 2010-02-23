@@ -23,7 +23,7 @@ Replace the /path/to/ with the destination directory you prefer.
 
 This will create a directory with the necessary files for the `hide_proj` Django project.
 
-You know need to inform Django where the database for managing usernames and other aspects of the system. Open the `settings.py` file in the `nnexus_proj` directory and modify it to read:
+You know need to inform Django where the database for managing usernames and other aspects of the system. Open the `settings.py` file in the `hide_proj` directory and modify it to read:
 {{{
 DATABASE_ENGINE = 'sqlite3'           
 DATABASE_NAME = '/path/to/Code/hide_proj/hide.db'       
