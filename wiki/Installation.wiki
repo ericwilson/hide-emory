@@ -94,14 +94,11 @@ simplejson
 tidylib
   }}}
 
-  * Let HIDE know where the underlying software powering the user interface and configuration file is by adding the following lines:
+  * Let HIDE know where the underlying software powering the user interface is by specifying the configuration file:
 {{{
-HIDELIB = '/path/to/hide-emory/lib/'
-EMORYCRFLIB = '/path/to/EMORYCRF/'
-CRF_MODEL_DIR = '/path/to/crfmodels/'
 HIDECONFIG = '/path/to/HIDE-config.xml'
 }}}
-Change `/path/to` to the locations you installed the HIDE libraries, config files and where you want to save the CRF models created by training the AutoLabeler.
+Change `/path/to` to the location you put the config file.
 
 
 ===Configure the `urls.py` file===
