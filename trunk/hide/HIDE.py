@@ -110,12 +110,14 @@ def replaceTags( nodelist, parent, repl, replvals ):
 				
 
 def doReplacement( sgml, repl, replvals ):
-	xhtml = sgml
-	dom = xml.dom.minidom.parseString(xhtml)
-	replaceTags(dom.childNodes, dom, repl, replvals)
-	xmlstring = dom.toxml()
-	val = xmlstring.replace("<?xml version=\"1.0\" ?>","")
-	return val
+   #TODO - consider using a non-validating SAX parser for this
+   # so we don't have to add in tags to make sure we get xml.
+   xhtml = sgml
+   dom = xml.dom.minidom.parseString(xhtml)
+   replaceTags(dom.childNodes, dom, repl, replvals)
+   xmlstring = dom.toxml()
+   val = xmlstring.replace("<?xml version=\"1.0\" ?>","")
+   return val
 	
         	
 def SGMLToMallet ( sgml ):
@@ -154,8 +156,8 @@ def MalletToSGML ( mallet ):
 			stderr=subprocess.PIPE,
 			)
 	stdout_value, stderr_value = proc.communicate(mallet)
-	#print str(stderr_value)
-	#print "RETURNING " + str(stdout_value)
+	print >> sys.stderr, str(stderr_value)
+	#print >> sys.stderr, "RETURNING " + str(stdout_value)
 	return str(stdout_value)
 	
 
@@ -220,6 +222,7 @@ def addFeatures( mallet ):
    tempfile.write(mallet)
    tempfile.close()
 
+   #print >> sys.stderr, os.system("which perl")
    addfeatures = "perl " + HIDELIB + "/HIDE-addfeatures.pl " + tempfilename
    print >> sys.stderr, "execing [" + addfeatures + "]"
    proc = subprocess.Popen(addfeatures,
@@ -229,8 +232,37 @@ def addFeatures( mallet ):
       stderr=subprocess.PIPE,
       )
    stdout_value, stderr_value = proc.communicate()
+   #print >> sys.stderr, "stdout_value = "  + str(stdout_value)
+   #print >> sys.stderr, "stderr_value = "  + str(stderr_value)
    os.unlink(tempfile.name)
    return str(stdout_value)
+
+def trainModel( modelfile, mallet ):
+   #write a temporary file containing the mallet features file
+   #train a CRF with the file, then delete it
+   tempfile = NamedTemporaryFile(delete=False)
+   tempfile.write(mallet)
+   tempfile.close()
+
+   maxmem = "1500M"
+   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
+   javaargs = "-Xmx" + maxmem + " -cp \"" + javaclasspath + "\""
+   execme = 'java ' + javaargs + " EmoryCRF --fully-connected false --train true --model-file " + modelfile + " " + tempfile.name + " 2>" + modelfile + ".log"
+
+   print >> sys.stderr, "executing " + execme
+
+   #open up EmoryCRF
+   proc = subprocess.Popen( execme,
+               shell=True,
+               stdout=subprocess.PIPE,
+            #   stderr=subprocess.PIPE,
+               )
+
+   #read output from EmoryCRF
+   stdout_value, stderr_value = proc.communicate()
+   os.unlink(tempfile.name)
+
+   
 
 
 def labelMallet( modelfile, mallet ):
@@ -270,8 +302,8 @@ def labelMallet( modelfile, mallet ):
    labels = resultlabels.split("\n")
 
    #print "[" + str(labels) + "]"
-   print >> sys.stderr, "row len = " + str(len(rows))
-   print >> sys.stderr, "labels len = " + str(len(labels))
+   #print >> sys.stderr, "row len = " + str(len(rows))
+   #print >> sys.stderr, "labels len = " + str(len(labels))
 
 
 #   print "label = " + str(labels)
@@ -284,7 +316,7 @@ def labelMallet( modelfile, mallet ):
       vals = r.split(" ")
       for v in vals:
           #print "checking " + v
-          p = re.compile("TERM_(.*)")
+          p = re.compile("^TERM_(.*)")
           m = p.match(v)
           if ( m ):
              #print m.group(0) + " " + labels[i]
@@ -295,3 +327,13 @@ def labelMallet( modelfile, mallet ):
    sgml = MalletToSGML(resultsmallet)
    #print sgml
    return sgml
+
+def getTags ( xml ):
+#extracts all the tag names in the xml document
+   dtags = dict()
+   tags = re.findall( "<([^<>/]+)(\s+[^<>]+)?>", xml )
+   for t in tags:
+      a = t[0].split(' ')
+      dtags[a[0]] = 1
+   return dtags.keys()
+

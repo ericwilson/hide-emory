@@ -39,17 +39,18 @@ jQuery(document).ready(function(){
 jQuery("#anon1").jqGrid({
 			datatype: "local", 
 			height: 250, 
-			colNames:['ID','Title'], 
+			colNames:['ID','Title', 'Labels'], 
 			colModel:[ 
 					{name:'id',index:'id', width:60, sorttype:"int"}, 
-					{name:'title',index:'title', width:90}, 
+					{name:'title',index:'title', width:120}, 
+					{name:'labels',index:'labels', width:400}, 
 				], 
 			multiselect: true, 
 			caption: "Objects to be labeled"
 			});
 
 var mydata = [{% for key,object in objects.items %}
-	{ id:"{{forloop.counter}}", title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" },
+	{ id:"{{forloop.counter}}", title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" , labels:"{{object.value.labels}}" },
 {% endfor %}];
 
 for(var i=0;i<=mydata.length;i++) {

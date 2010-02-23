@@ -12,7 +12,7 @@ class ReportXMLHandler(ContentHandler):
     self.in_content = 0
 
  def startElement(self, name, attrs):
-    print "start " + name
+    #print "start " + name
     if name == 'report':
        self.in_report += 1
     elif name == 'pid':
@@ -27,7 +27,7 @@ class ReportXMLHandler(ContentHandler):
     return
 
  def endElement(self, name):
-    print "end " + name
+    #print "end " + name
     if name == 'report':
        self.in_report -= 1
     elif name == 'pid':
