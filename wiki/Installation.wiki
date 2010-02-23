@@ -81,6 +81,18 @@ COUCHDB_PASS = 'your_password'
 perl -MCPAN -e 'install Lingua::EN::Tagger' 
 perl -MCPAN -e 'install URI::Escape' 
   }}}
+  * Install necessary python modules.
+  {{{
+xml.dom.minidom
+urllib
+subprocess
+elementtree
+tempfile 
+datetime
+random
+simplejson
+tidylib
+  }}}
 
   * Let HIDE know where the underlying software powering the user interface and configuration file is by adding the following lines:
 {{{
