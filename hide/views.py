@@ -16,7 +16,7 @@ import simplejson as json
 import re
 import os
 import HIDE
-from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig, getTags
+from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig, getTags, trainModel, addFeatures, labelMallet
 from tidylib import tidy_document
 import subprocess
 
@@ -70,7 +70,7 @@ def objlist(request):
 			items = db.view('by_title/title', descending=True)
 			for item in items:
 				if ( 'text' in item['value'] ):
-					item['value']['summary'] = item['value']['text'][0:100]
+					#item['value']['summary'] = item['value']['text'][0:100]
 					item['value']['labels'] = ", ".join(getTags(item['value']['text']))
 			context = {
 				'rows' : list(items),
@@ -221,7 +221,9 @@ def deidentify( request, id ):
 #	    'accountnum' : "***accountnum***",
 #	    }
     repl = dict()
+    print "Replacing " + str(REPLACEMENTS)
     deid = doReplacement( "<object>" + html + "</object>", REPLACEMENTS, repl )
+    print "replaced " + str(repl)
 	
     doc['text'] = deid
 	
@@ -267,109 +269,27 @@ def autolabel( request, id ):
 	#	options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
 	#print "xhtml:" + xhtml
 	
-	#convert the xhtml into mallet
-	mallet = SGMLToMallet(html)
-	
-	#print mallet
-	
-	#save into file
-	tempfile = '/tmp/workfile'
-	f = open(tempfile, 'w')
-	f.write(mallet)
-	f.close()
-	
-	HIDEADDFEATURES = HIDELIB + "/HIDE-addfeatures.pl"
-
-	
-	#add features to the mallet file
-	proc = subprocess.Popen("perl " + HIDEADDFEATURES + " " + tempfile,
-		shell=True,
-		stdin=subprocess.PIPE,
-		stdout=subprocess.PIPE,
-		stderr=subprocess.PIPE,
-		)
-	stdout_value, stderr_value = proc.communicate()
-
-	#print mallettext
-	#print str(stdout_value)
-	featurefile = tempfile + ".features"
-	f = open( featurefile, 'w')
-	f.write(str(stdout_value))
-	f.close()
-
-	maxmem = "5000M"
-	emorycrf = EMORYCRFLIB + "emorycrf"
-	malletdir = EMORYCRFLIB + "mallet"
-	javaclasspath = emorycrf + ":" + malletdir + "/class/:" + malletdir + "/lib/mallet-deps.jar"
-	javaargs = "-Xmx" + maxmem + " -cp \"" + javaclasspath   + "\""
-	
+	model = CRFMODELDIR + crffile
 	
 	#TODO update this to allow the user to specify the CRF to use.
-	model = CRFMODELDIR + crffile
 	if not os.path.exists(model):
 	   error = "You have not yet trained the AutoLabeler. Please train and try again."
 	   
 	   context = {'error':error}
 	   return render_to_response('hide/error.html', context, context_instance=RequestContext(request))
 
-	
-	execme = "java " + javaargs + " EmoryCRF --model-file " + model + " " + featurefile
-	print "execing " + execme
-	
-	
-	#open up EmoryCRF
-	proc = subprocess.Popen( execme,
-			shell=True,
-#			stdin=subprocess.PIPE,
-			stdout=subprocess.PIPE,
-			stderr=subprocess.PIPE,
-			)
-	stdout_value, stderr_value = proc.communicate()
-	#read output from EmoryCRF
-	
-	resultlabels = str(stdout_value)
-	#print "LABEL RESULTS " + resultlabels
-	
-	#build the mallet file from the resulting labels and the original mallet
-	#mallet is the original
-	#resultlabels are the labels
-	rows = mallet.split("\n")
-	labels = resultlabels.split("\n")
-	
-	#print "rows length: " + str(len(rows))
-	#print "labels length: " + str(len(labels)) #emory crf prints one extra newline at the end. 
-	
-	resultsmallet = ""
-	
-	for i in range(0, len(rows)):
-		r = rows[i]
-		vals = r.split("\t")
-		for v in vals:
-			p = re.compile("TERM_(.*)")
-			m = p.match(v)
-			if ( m ):
-				resultsmallet += m.group(0) + " " + labels[i] + "\n"
-				break
-			#print "[" + v + "]",
-		#print ""
+	#convert the xhtml into mallet
+	mallet = SGMLToMallet(html)
 
-	#print resultsmallet
+	#add features to the mallet
+	features = addFeatures(mallet)
+
+	resultsmallet = labelMallet( model, features )
+
 	sgml = MalletToSGML(resultsmallet)
-	
-	#print resultsmallet
-	#print sgml
-	
 	
 	doc['text'] = sgml
 	
-	#print "error: " + str(stderr_value)
-	
-	#convert mallet back into xhtml
-	
-	#set the value as the text of the object
-	
-	#display the object
-#	tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
 	context = {
 		'row':doc,
 		'displaytags':LEGEND,
@@ -443,59 +363,18 @@ def train(request,tag):
 			#	options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
 			mallettext += SGMLToMallet(html)
 		
-		HIDEADDFEATURES = HIDELIB + "/HIDE-addfeatures.pl"
-		
-		#write to the tmp dir
-		tempfile = CRFMODELDIR + tag + ".out"
-		f = open(tempfile, 'w')
-		f.write(mallettext)
-		f.close()
-		
-#		print mallettext
-		
-		#add features to the mallet file
-		proc = subprocess.Popen("perl " + HIDEADDFEATURES + " " + tempfile,
-			shell=True,
-			stdin=subprocess.PIPE,
-			stdout=subprocess.PIPE,
-			stderr=subprocess.PIPE,
-			)
-		stdout_value, stderr_value = proc.communicate()
+		features = addFeatures( mallettext )
 
-		#print mallettext
-#		print stdout_value
-		print str(stderr_value)
+		#save the features to file for debugging purposes
+		#TODO - set a debug option in the config file
 		featurefile = CRFMODELDIR + tag + ".features"
 		f = open( featurefile, 'w')
-		f.write(stdout_value)
+		f.write(features)
 		f.close()
-		
-		
-		#train classifier
-		maxmem = "5000M"
-		emorycrf = EMORYCRFLIB + "emorycrf"
-		malletdir = EMORYCRFLIB + "mallet"
-		javaclasspath = emorycrf + ":" + malletdir + "/class/:" + malletdir + "/lib/mallet-deps.jar"
-		javaargs = "-Xmx" + maxmem + " -cp \"" + javaclasspath   + "\""
-		
-		
-		model = CRFMODELDIR + tag + ".crf"
-		
-		execme = "java " + javaargs + " EmoryCRF --fully-connected false --train true --model-file " + model + " " + featurefile + " 2> " + model + ".log"
-		print "execing " + execme
-		
-		#train using EmoryCRF
-		proc = subprocess.Popen( execme,
-				shell=True,
-	#			stdin=subprocess.PIPE,
-				stdout=subprocess.PIPE,
-				stderr=subprocess.PIPE,
-				)
-		stdout_value, stderr_value = proc.communicate()
 
-		#print stdout_value
-		#print stderr_value
-				
+		model = CRFMODELDIR + tag + ".crf"
+		trainModel( model, features )
+		
 		return render_to_response('hide/traincomplete.html', context, context_instance=RequestContext(request))
 	
 	else:
@@ -571,6 +450,7 @@ def anonymize(request, tag):
 		# or just work over a pipe.
 
 		context['error'] = "anonymizing " + stringtoanon
+		print "sending " + stringtoanon
 		execme = "java -cp \"" + HIDELIB + "\" edu.emory.mathcs.Main 2"
 		#do the kanonymization over system call
 		proc = subprocess.Popen(execme,
@@ -591,6 +471,7 @@ def anonymize(request, tag):
 		for a in anonlist:
 		   vals = a.split(',')
 		   if ( len(vals) > 1 ):
+		      print "results = " + str(vals)
 		      values = dict()
 		      gender = fixgender(vals[1])
 		      values['age'] = vals[0]
@@ -603,14 +484,15 @@ def anonymize(request, tag):
 			# value was extracted.
 			keyid = str(docmap[key])
 			#print key + " -> " + keyid
-			repl = REPLACEMENTS
+			repl = REPLACEMENTS.copy()
 			repl['age'] = subvals[keyid]['age']
 			repl['gender'] = subvals[keyid]['gender']
 			text = object['value']['text']
 			html = "<object>" + text.replace("<br>", "<br/>") + "</object>"
 			sgml, errors = tidy_document( html,
 				options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-			deid = doReplacement( sgml, repl )
+			dorepl = dict()
+			deid = doReplacement( sgml, repl, dorepl )
 			#print deid
 			# we should store the deid content now in the hide_deid database
 			Object.set_db(deiddb)

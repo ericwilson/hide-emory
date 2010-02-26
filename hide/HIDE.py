@@ -70,11 +70,13 @@ def loadConfig( filename ):
    global HIDELIB
    global EMORYCRFLIB
    global CRFMODELDIR
+   global MAXMEM
    CONFIGTREE = ElementTree.parse(filename)
    croot = CONFIGTREE.getroot()
    HIDELIB = croot.find('hidelib').text
    EMORYCRFLIB = croot.find('crflib').text 
    CRFMODELDIR = croot.find('crfmodeldir').text
+   MAXMEM = croot.find('maxmem').text
 
 def getReplacements():
    #CONFIGTREE contains the ElementTree of the XML file specified 
@@ -244,9 +246,8 @@ def trainModel( modelfile, mallet ):
    tempfile.write(mallet)
    tempfile.close()
 
-   maxmem = "1500M"
    javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
-   javaargs = "-Xmx" + maxmem + " -cp \"" + javaclasspath + "\""
+   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
    execme = 'java ' + javaargs + " EmoryCRF --fully-connected false --train true --model-file " + modelfile + " " + tempfile.name + " 2>" + modelfile + ".log"
 
    print >> sys.stderr, "executing " + execme
@@ -273,9 +274,8 @@ def labelMallet( modelfile, mallet ):
 
    #setup the external call to EmoryCRF
    #TODO update this to allow the user to specify the CRF to use.
-   maxmem = "1500M"
    javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
-   javaargs = "-Xmx" + maxmem + " -cp \"" + javaclasspath + "\""
+   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
    execme = 'java ' + javaargs + " EmoryCRF --model-file " + modelfile + " " + tempfile.name
 
    print >> sys.stderr, "executing " + execme
@@ -323,10 +323,11 @@ def labelMallet( modelfile, mallet ):
              resultsmallet += m.group(0) + " " + labels[i] + "\n"
              break
 
+   return resultsmallet
    #print "results = [" + resultsmallet + "]"
-   sgml = MalletToSGML(resultsmallet)
+#   sgml = MalletToSGML(resultsmallet)
    #print sgml
-   return sgml
+#   return sgml
 
 def getTags ( xml ):
 #extracts all the tag names in the xml document

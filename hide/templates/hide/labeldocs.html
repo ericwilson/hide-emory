@@ -38,13 +38,14 @@ jQuery(document).ready(function(){
 
 jQuery("#anon1").jqGrid({
 			datatype: "local", 
-			height: 250, 
+			height: 'auto', 
 			colNames:['ID','Title', 'Labels'], 
 			colModel:[ 
 					{name:'id',index:'id', width:60, sorttype:"int"}, 
 					{name:'title',index:'title', width:120}, 
 					{name:'labels',index:'labels', width:400}, 
 				], 
+			autowidth: true,
 			multiselect: true, 
 			caption: "Objects to be labeled"
 			});

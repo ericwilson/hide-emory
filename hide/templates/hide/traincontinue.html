@@ -11,9 +11,14 @@
         /*line-height: 200%;*/
         /*margin-right: 100px;*/
         border: 5px solid #ccc;
-	width: 600px;
+	width: 90%;
         margin-left: auto;
         margin-right: auto;
+}
+
+#anon1 {
+	margin-left: auto;
+	margin-right: auto;
 }
 </style>
 
@@ -27,12 +32,13 @@ function submitform()
 </script>
 
 
-<link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/jquery-ui-1.7.2.custom.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/ui.jqgrid.css" />
  
 <script src="/site_media/js/jquery.js" type="text/javascript"></script>
 <script src="/site_media/js/i18n/grid.locale-en.js" type="text/javascript"></script>
 <script src="/site_media/js/jquery.jqGrid.min.js" type="text/javascript"></script>
+
+<link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/ui-lightness/jquery-ui-1.7.2.custom.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/ui.jqgrid.css" />
 
 
 
@@ -41,19 +47,20 @@ jQuery(document).ready(function(){
 
 jQuery("#anon1").jqGrid({
                         datatype: "local", 
-                        height: 400, 
-                        colNames:['ID','Title', 'Labels'], 
+                        height: 'auto', 
+                        colNames:['Title', 'Tags', 'Labels'], 
                         colModel:[ 
-                                        {name:'id',index:'id', width:60, sorttype:"int"}, 
-                                        {name:'title',index:'title', width:120}, 
-                                        {name:'labels',index:'labels', width:400}, 
+                                        {name:'title',index:'title'}, 
+                                        {name:'tags',index:'tags'}, 
+                                        {name:'labels',index:'labels'}, 
+					
                                 ], 
-                        multiselect: true, 
+			autowidth: true,
                         caption: "Objects for training and/or labeling"
                         });
 
 var mydata = [{% for key,object in objects.items %}
-        { id:"{{forloop.counter}}", title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" , labels:"{{object.value.labels}}" },
+        {title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" , labels:"{{object.value.labels}}", tags:"{{object.value.tags}}"},
 {% endfor %}];
 
 for(var i=0;i<=mydata.length;i++) {
