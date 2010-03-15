@@ -26,15 +26,20 @@ HIDE v1.5
 {% block content %}
 <div id="welcome">
 <h1>Welcome to HIDE v1.5</h1>
-What would you like to do?
 <br/>
-<a href="./list/">List All Documents</a><br/>
-<a href="./labeldocs/">Label Documents</a><br/>
-<a href="./managesets/">Anonymize Documents</a><br/>
+<h2>Tasks</h2>
+<a href="./label/">Label Documents</a><br/>
+<a href="./anonymize/">Anonymize Documents</a><br/>
+<br/>
 {% comment %}
 <a href="./viewanonymized/">View Anonymized Documents</a><br/>
 {% endcomment %}
-<a href="./add/">Add Documents</a>
+<h2>Administration</h2>
+<a href="./add/">Import Documents</a> <br/>
+<a href="./export/">Export Documents</a> <br/>
+<a href="./list/">List All Documents</a><br/>
+<a href="./analysis/">Analysis</a> <br/>
+<a href="./settings/">Settings</a> <br/>
 </div>
 {% endblock %}
 

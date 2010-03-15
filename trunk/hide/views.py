@@ -1,6 +1,6 @@
 # Create your views here.
 from django.template import RequestContext
-from django.http import Http404,HttpResponseRedirect
+from django.http import Http404,HttpResponseRedirect,HttpResponse
 from django.shortcuts import render_to_response
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -11,14 +11,24 @@ from restkit.httpc import BasicAuth
 import datetime
 import random
 import simplejson as json
-#import xml.dom.minidom
 #from BeautifulSoup import BeautifulSoup
 import re
 import os
+import sys
 import HIDE
+import HIDEexperiment
 from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig, getTags, trainModel, addFeatures, labelMallet
 from tidylib import tidy_document
 import subprocess
+import xmlprinter
+import StringIO
+import xml.sax.saxutils
+import shutil
+
+
+from xml.sax import make_parser
+from xml.sax.handler import ContentHandler 
+from JSAXParser import ReportXMLHandler
 
 
 
@@ -30,7 +40,7 @@ class Object(Document):
 
 
 #first thing is to initialize the HIDE module from the config file
-loadConfig(getattr(settings,'HIDECONFIG', 'default'))
+log = loadConfig(getattr(settings,'HIDECONFIG', 'default'))
 
 HIDELIB = HIDE.HIDELIB
 EMORYCRFLIB = HIDE.EMORYCRFLIB # getattr(settings, 'EMORYCRFLIB', '/tmp/')
@@ -49,6 +59,7 @@ LEGEND = getLegend()
 
 print REPLACEMENTS
 print LEGEND
+print log
 
 db = SERVER.get_or_create_db('hide_objects')
 deiddb = SERVER.get_or_create_db('hide_deid')
@@ -79,6 +90,7 @@ def objlist(request):
 	else:
 		return HttpResponseRedirect(u"/accounts/login/")
 
+@login_required(redirect_field_name='next')
 def add (request):
    if request.method == "POST":
 #if the user specified an MIT file
@@ -90,7 +102,8 @@ def add (request):
       elif 'xmlfile' in request.POST:
          print "importing XML file"
 	 f = request.FILES['file']
-	 handle_uploaded_xml_file(f)
+	 tags = request.POST['tags']
+	 handle_uploaded_xml_file(f, tags)
 	
       else:
          print "we are just adding a manual document"
@@ -106,6 +119,197 @@ def add (request):
       context = {}
       return render_to_response('hide/newdoc.html', context, context_instance=RequestContext(request))
 
+@login_required(redirect_field_name='next')
+def analysislist( request ):
+   tags = getalltags( db )
+   context = {
+     'tags':tags,
+     'path':'analysis',
+     'message':'Select the set you would like to analyze',
+   }
+   return render_to_response('hide/alltags.html', context, context_instance=RequestContext(request))
+
+@login_required(redirect_field_name='next')
+def analysis( request, tag ):
+   k = 10
+   print "getting statistics"
+
+   context = { 'tag':tag, 'k':k }
+
+   outdir = HIDE.CRFMODELDIR + "/test/" + tag
+
+   if ( request.method == "POST" ):
+      if k in request.POST:
+         k = request.POST['k'] 
+      context['k'] = k
+      print "performing analysis"
+      if 'kfold' in request.POST:
+         objects = db.view('tags/tags')
+         trainset = dict()
+         for obj in objects:
+            if obj['key'] == tag:
+               obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
+               trainset[obj['id']] = obj
+   
+         features = [] 
+         for key, object in trainset.iteritems():
+            html = object['value']['text'].replace("<br>", "<br/>")
+            mallettext = SGMLToMallet(html)
+            features.append( addFeatures(mallettext) )
+
+         print "Creating " + str(k) + " sets"
+	 k = int(k)
+         (trainset, testset) = HIDEexperiment.createKFold( features, k )
+	 #write the sets to disk
+	 #print "We got " + str(trainset)
+	 HIDEexperiment.writeKToDisk( outdir, trainset, testset, int(k) )
+      if 'train' in request.POST:
+         (trainset, testset, k) = HIDEexperiment.readSetsFromDisk( outdir )
+	 HIDEexperiment.runTrainOnDisk( outdir, trainset )
+
+      if 'test' in request.POST:
+         print "running test"
+         (trainset, testset, k) = HIDEexperiment.readSetsFromDisk( outdir )
+	 HIDEexperiment.runTestOnDisk( outdir, testset )
+	 
+
+      if 'results' in request.POST:
+         print "getting results"
+         results = HIDEexperiment.getTestInfoFromDisk( outdir )
+         html = HIDEexperiment.calcAccuracyHTMLFromDisk( outdir )
+         context['results'] = html
+
+      if 'clear' in request.POST:
+         shutil.rmtree( outdir )
+
+
+   (kfoldinfo,k) = HIDEexperiment.getKFoldInfoFromDisk( HIDE.CRFMODELDIR + "/test/" + tag )
+   context['kfoldsets'] = kfoldinfo
+   context['trainsets'] = HIDEexperiment.getTrainInfoFromDisk( outdir )
+   context['testsets'] = HIDEexperiment.getTestInfoFromDisk( outdir )
+   context['k'] = k
+
+   return render_to_response('hide/analysis.html', context, context_instance=RequestContext(request))
+
+
+      
+
+@login_required(redirect_field_name='next')
+def exportlist( request ):
+   tags = getalltags( db )
+   context = {
+     'tags':tags,
+     'path':'export',
+     'message':'Select the set you would like to export',
+   }
+   return render_to_response('hide/alltags.html', context, context_instance=RequestContext(request))
+
+@login_required(redirect_field_name='next')
+def export (request, tag):
+   
+   if ( request.method == "POST" ):
+      print "about to do export"
+      #those documents that are selected will be exported
+      type = request.POST['type']
+      selected = request.POST['selected']
+      if selected != '':
+         return handle_export( type, selected )
+   
+   objects = db.view('tags/tags')
+   exportset = dict()
+   for obj in objects:
+      if obj['key'] == tag:
+         obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
+         exportset[obj['id']] = obj
+   context = {
+      'objects':exportset,
+      'tags': tag,
+   }
+   return render_to_response('hide/exportcontinue.html', context, context_instance=RequestContext(request))
+      
+
+def handle_export ( type, ids ):
+   #loop through the ids build a response string and send it back to the user.
+   #we may want to set the filetype so that the correct download box opens for the user.
+  # 'text/plain'
+  # 'application/xml'
+  # 'application/json'
+   print "exporting"
+   vals = ids.split(',')
+   output = ""
+   objects = []
+   for v in vals:
+      #get it from the couchdb
+      object = db.get(v) 
+      objects.append(object)
+
+   format = "text/plain"
+   output = ""
+   if type == 'xml':
+      output = buildXMLFromList(objects)
+      format = "application/xml"
+   elif type == 'json':
+      output = ", \n".join(map(str, objects))
+      format = "application/json"
+   else:
+      #TODO - provide other output formats
+      output = ", \n".join(map(str, objects))
+
+
+   response = HttpResponse(output, mimetype=format)
+   return response
+#   return render_to_response('hide/exportcomplete.html', context, context_instance=RequestContext(request))
+
+def XMLifyContent ( content ):
+   tokens = re.split( '(<([^<>]+)(\\s+[^<>]+)?>)(.*?)(</\\2>)' , content );
+   newtext = ""
+   i = 0
+   while i < len(tokens):
+      m = re.search( '^<([^/<>! ]+)(\\s*[^<>]+)?>', tokens[i] ) 
+      if m:
+         newtext += tokens[i]  #start tag
+         i += 3
+         newtext += xml.sax.saxutils.escape(tokens[i]) #text
+         i += 1
+         newtext += tokens[i] #end tag
+      else: 
+         newtext += xml.sax.saxutils.escape(tokens[i]) #just text
+      i += 1
+   return newtext
+
+def buildXMLFromList( objects ):
+   print "Building xml"
+   fp = StringIO.StringIO()
+   writer = xmlprinter.xmlprinter(fp)
+   writer.startDocument()
+   writer.startElement("reports")
+   for o in objects:
+      print "Building xml for object:"
+      print str(o)
+      writer.startElement("report")
+      title = o['title']
+      writer.startElement("title")
+      writer.data(title) 
+      writer.endElement("title")
+      m = re.match(r"PhysioNet-(\d+)-(\d+)", title)
+      if m:
+        writer.startElement("pid")
+        writer.data(m.group(1))
+	writer.endElement("pid")
+	writer.startElement("rid")
+        writer.data(m.group(2))
+	writer.endElement("rid")
+      writer.startElement("content")
+      content = XMLifyContent(o['text'])
+      print "writing content =\n" + content
+      writer.raw(content)
+      writer.endElement("content")
+      writer.endElement("report")
+   writer.endElement("reports")
+   writer.endDocument()
+   reportXML = fp.getvalue()
+   print "sending content =\n" + reportXML
+   return reportXML 
 
 #this function handles an uploaded xml file. The xml should be of the form
 #<records>
@@ -114,11 +318,8 @@ def add (request):
 #<rid>number</rid>
 #<content>The Text of the Record here</content>
 #</records>
-from xml.sax import make_parser
-from xml.sax.handler import ContentHandler 
-from JSAXParser import ReportXMLHandler
 
-def handle_uploaded_xml_file(f):
+def handle_uploaded_xml_file(f, tagi):
    print "parsing " + f.name
    parser = make_parser()
    curHandler = ReportXMLHandler()
@@ -129,14 +330,20 @@ def handle_uploaded_xml_file(f):
    for k,v in sorted(reports.iteritems()):
       for x,y in sorted(v.iteritems()):
          #create an object and put it in the couchdb
-	 name = "PhysioNet-" + k + "-" + x
+	 print "k -> " + k
+	 print "x -> " + x
+	 name = ""
+	 if ( k != '-1' ):
+	    name = "PhysioNet-" + k + "-" + x
+	 else:
+	    name = x
          print "adding " + name + " to CouchDB"
          #print y
          Object.set_db(db)
          object = Object(
               title = name,
               text = y,
-              tags = 'PhysioNet' 
+              tags = tagi
          )
          #print "[" + currentRecord + "]" 
          id = object.save()
@@ -144,6 +351,7 @@ def handle_uploaded_xml_file(f):
 #   print reports.keys()
 #   print reports.keys().sort()
 #   print curHandler.content
+   return HttpResponse("Successful upload")
    
 def handle_uploaded_mit_file(f):
    print "parsing " + f.name
@@ -283,6 +491,7 @@ def autolabel( request, id ):
 
 	#add features to the mallet
 	features = addFeatures(mallet)
+	print features
 
 	resultsmallet = labelMallet( model, features )
 
@@ -352,18 +561,13 @@ def train(request,tag):
 	
 	if ( request.method == "POST" ):
 		print "about to do train"
-		mallettext = ""
+		features = ""
 		for key, object in trainset.iteritems():
-		    # add each object into one mallet formatted file
-			# first convert the sgml into mallet and save
-			#convert the xhtml into mallet
 			html = object['value']['text'].replace("<br>", "<br/>")
-			#options = dict(output_xhtml=1, add_xml_decl=0, indent=1, tidy_mark=0)
-			#xhtml, errors = tidy_document( html,
-			#	options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-			mallettext += SGMLToMallet(html)
+			mallettext = SGMLToMallet(html)
+			features += addFeatures(mallettext)
 		
-		features = addFeatures( mallettext )
+#		features = addFeatures( mallettext )
 
 		#save the features to file for debugging purposes
 		#TODO - set a debug option in the config file
@@ -542,7 +746,7 @@ def getText(nodelist):
 
 
 @login_required(redirect_field_name='next')
-def managesets( request ):
+def anonymizelist( request ):
 	tags = getalltags( db )
 	context = {
 		'tags':tags,
@@ -613,4 +817,45 @@ def randomReport( request ):
 
 	return render_to_response('hide/report.html', context, context_instance=RequestContext(request))
 
+@login_required(redirect_field_name='next')
+def runtests ( request, tag ):
+   #perform k fold cross validation on the specified tag group.
+	objects = db.view('tags/tags')
+	trainset = dict()
+	for obj in objects:
+		if obj['key'] == tag:
+		        obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
+			trainset[obj['id']] = obj
 	
+	context = {
+	   'objects':trainset,
+	   'tags': tag,
+	}
+	
+	
+	print "about to do train"
+	features = [] 
+	for key, object in trainset.iteritems():
+		html = object['value']['text'].replace("<br>", "<br/>")
+		mallettext = SGMLToMallet(html)
+		features.append( addFeatures(mallettext) )
+	
+
+	#features is an array
+	#TODO -update this to read from user
+	k = 10
+	(trainset, testset) = HIDEexperiment.createKFold( features, k )
+	results = HIDEexperiment.runKFoldTest( "/tmp/", trainset, testset, k )
+	for r in range(len(results)):
+	   print >> sys.stderr, "writing out results for " + str(r)
+	   f = open ( "/tmp/test" + str(r) + ".results", 'w' )
+	   f.write(results[r])
+	   f.close()
+	
+	html = HIDEexperiment.calcAccuracyHTML(results, k)
+
+	print >> sys.stderr, "done with runtests\n" + html
+
+	context = {'accuracy':html}
+	
+	return render_to_response('hide/accuracy.html', context, context_instance=RequestContext(request))

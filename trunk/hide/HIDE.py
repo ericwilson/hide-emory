@@ -71,12 +71,34 @@ def loadConfig( filename ):
    global EMORYCRFLIB
    global CRFMODELDIR
    global MAXMEM
+   global DICTIONARY
    CONFIGTREE = ElementTree.parse(filename)
    croot = CONFIGTREE.getroot()
    HIDELIB = croot.find('hidelib').text
    EMORYCRFLIB = croot.find('crflib').text 
    CRFMODELDIR = croot.find('crfmodeldir').text
    MAXMEM = croot.find('maxmem').text
+   DICTIONARYDIR = croot.find('dictionary').text
+   DICTIONARY = dict()
+   output = ""
+   output += "reading dictionary from " + DICTIONARYDIR
+   for fileName in os.listdir ( DICTIONARYDIR ):
+      m = re.match('(.*).txt$', fileName)
+      if m:
+         dictname = m.group(1)
+         #open file and populate appropriate dictionary
+	 output += "loading " + dictname + " dictionary from " + fileName + "\n"
+	 DICTIONARY[dictname] = dict()
+	 f = open( DICTIONARYDIR + "/" + fileName, 'r' )
+	 while 1:
+	    line = f.readline()
+	    if not line:
+	       break
+	    term = line.rstrip().lower()
+	    #output += "adding " + term + " to " + dictname
+	    DICTIONARY[dictname][term] = 1
+   return output
+
 
 def getReplacements():
    #CONFIGTREE contains the ElementTree of the XML file specified 
@@ -158,7 +180,7 @@ def MalletToSGML ( mallet ):
 			stderr=subprocess.PIPE,
 			)
 	stdout_value, stderr_value = proc.communicate(mallet)
-	print >> sys.stderr, str(stderr_value)
+	#print >> sys.stderr, str(stderr_value)
 	#print >> sys.stderr, "RETURNING " + str(stdout_value)
 	return str(stdout_value)
 	
@@ -216,6 +238,11 @@ def buildTemplate( sgml, tagstoa ):
 
 
 def addFeatures( mallet ):
+   """Currently calls perl to generate most regular expression features.
+      The dictionary features are added in the python code.
+      The dictionary features are currently case-insensitive."""
+
+   #the dictionary features are currently case-insensitive
    #TODO - add support for passing in extra feature processing
    #this function adds the standard features to a mallet formatted file
    
@@ -226,6 +253,9 @@ def addFeatures( mallet ):
 
    #print >> sys.stderr, os.system("which perl")
    addfeatures = "perl " + HIDELIB + "/HIDE-addfeatures.pl " + tempfilename
+#   if DICTIONARYFILE != '':
+#      addfeatures = "perl " + HIDELIB + "/HIDE-addfeatures.pl " + tempfilename + " " + DICTIONARYFILE
+
    print >> sys.stderr, "execing [" + addfeatures + "]"
    proc = subprocess.Popen(addfeatures,
       shell=True,
@@ -237,7 +267,37 @@ def addFeatures( mallet ):
    #print >> sys.stderr, "stdout_value = "  + str(stdout_value)
    #print >> sys.stderr, "stderr_value = "  + str(stderr_value)
    os.unlink(tempfile.name)
-   return str(stdout_value)
+   features = str(stdout_value)
+   #we now have all of the features
+   #now loop through (*again*) and add the dictionary features
+   fvs = features.split("\n")
+   for i in range(len(fvs)):
+      fv = fvs[i]
+      fs = re.split('\s+', fv)
+      for f in fs:
+         #this is down to the actual feature level
+	 # find the TERM_ -> check dictionary -> append to fv and break
+	 m = re.match('TERM_(.*)', f)
+	 if m:
+	    term = m.group(1)
+	    in_dict = checkDictionaries( term )
+	    if in_dict != '':
+	       #print "FOUND that [" + term + "] is in " + in_dict
+	       fvs[i] = in_dict + " " + fv
+	       break
+   features = "\n".join(fvs) #remake the string from the fvs
+   return features
+
+def checkDictionaries( term ):
+   t = term.lower()
+   in_dict = []
+   #look through all of the dictionaries and add to in_dict array if match
+   for k in DICTIONARY.keys():
+      if t in DICTIONARY[k]:
+         in_dict.append("IN_" + str(k))
+
+   return " ".join(in_dict)
+   
 
 def trainModel( modelfile, mallet ):
    #write a temporary file containing the mallet features file
@@ -258,11 +318,25 @@ def trainModel( modelfile, mallet ):
                stdout=subprocess.PIPE,
             #   stderr=subprocess.PIPE,
                )
-
    #read output from EmoryCRF
    stdout_value, stderr_value = proc.communicate()
    os.unlink(tempfile.name)
 
+
+def testModel (outfile, modelfile, mallet ):
+   tempfile = NamedTemporaryFile(delete=False)
+   tempfile.write(mallet)
+   tempfile.close()
+
+   results = labelMallet( modelfile, mallet)
+
+   print >> sys.stderr, "writing results to " + outfile;
+   f = open( outfile , 'w' )
+   f.write(results)
+   f.close()
+   print >> sys.stderr, "done writing results";
+
+   return 1
    
 
 
@@ -270,7 +344,6 @@ def labelMallet( modelfile, mallet ):
    tempfile = NamedTemporaryFile(delete=False)
    tempfile.write(mallet)
    tempfile.close()
-
 
    #setup the external call to EmoryCRF
    #TODO update this to allow the user to specify the CRF to use.
@@ -289,11 +362,17 @@ def labelMallet( modelfile, mallet ):
 
    #read output from EmoryCRF
    stdout_value, stderr_value = proc.communicate()
-   print >> sys.stderr, stderr_value
+   #print >> sys.stderr, stderr_value
 
+   print >> sys.stderr, "waiting on response"
    resultlabels = stdout_value
+   print >> sys.stderr, "got response"
    #delete the created tempfile
-   os.unlink(tempfile.name)
+   print >> sys.stderr, "unlinking file"
+
+#   os.unlink(tempfile.name)
+
+   print >> sys.stderr, "unlinked file"
 
    #build the mallet file from the resulting labels and the original mallet
    #mallet is the original
@@ -301,33 +380,16 @@ def labelMallet( modelfile, mallet ):
    rows = mallet.split("\n")
    labels = resultlabels.split("\n")
 
-   #print "[" + str(labels) + "]"
-   #print >> sys.stderr, "row len = " + str(len(rows))
-   #print >> sys.stderr, "labels len = " + str(len(labels))
-
-
-#   print "label = " + str(labels)
+   print >> sys.stderr, "got rows " + str(len(rows)) +" and labels " + str(len(labels))
 
    resultsmallet = ""
-   #print "rows = " + str(rows)
-
    for i in range(0, len(rows)):
       r = rows[i]
-      vals = r.split(" ")
-      for v in vals:
-          #print "checking " + v
-          p = re.compile("^TERM_(.*)")
-          m = p.match(v)
-          if ( m ):
-             #print m.group(0) + " " + labels[i]
-             resultsmallet += m.group(0) + " " + labels[i] + "\n"
-             break
+      l = labels[i]
+      resultsmallet += r + " " + l + "\n"
 
+   print "returning results"
    return resultsmallet
-   #print "results = [" + resultsmallet + "]"
-#   sgml = MalletToSGML(resultsmallet)
-   #print sgml
-#   return sgml
 
 def getTags ( xml ):
 #extracts all the tag names in the xml document
