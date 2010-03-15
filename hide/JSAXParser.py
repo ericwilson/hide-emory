@@ -5,10 +5,14 @@ from xml.sax.handler import ContentHandler
 class ReportXMLHandler(ContentHandler):
  reports = dict()
  content = ""
+ pid = -1
+ rid = -1
+
  def __init__ (self):
     self.in_report = 0
     self.in_pid = 0
     self.in_rid = 0
+    self.in_title = 0
     self.in_content = 0
 
  def startElement(self, name, attrs):
@@ -19,6 +23,8 @@ class ReportXMLHandler(ContentHandler):
        self.in_pid += 1
     elif name == 'rid':
        self.in_rid += 1
+    elif name == 'title':
+       self.in_title += 1
     elif name == 'content':
        self.in_content += 1
        self.content = ''
@@ -34,8 +40,16 @@ class ReportXMLHandler(ContentHandler):
        self.in_pid -= 1
     elif name == 'rid':
        self.in_rid -= 1
+    elif name == 'title':
+       self.in_title -= 1
     elif name == 'content':
-       self.reports[self.pid][self.rid] = self.content 
+       if self.pid != -1:
+          self.reports[self.pid][self.rid] = self.content 
+       else:
+          print "processing " + self.title
+	  if '-1' not in self.reports:
+             self.reports['-1'] = dict()
+	  self.reports['-1'][self.title] = self.content
        self.in_content -= 1
     elif name != 'reports':
        self.content += '</' + name + '>'
@@ -52,6 +66,8 @@ class ReportXMLHandler(ContentHandler):
     elif self.in_rid == 1:
     #   print ch
        self.rid = ch
+    elif self.in_title == 1:
+       self.title = ch
    # else:
    #    print "Parsing error: " + ch
     return

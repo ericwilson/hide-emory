@@ -53,7 +53,8 @@ border:2px solid #6688AA;
 <form method="post" action="." enctype="multipart/form-data">
 {% csrf_token %}
 Select the file: 
-<input type="file" name="file" size="40"/> 
+<input type="file" name="file" size="40"/>  <br/>
+<input type="tags" name="tags" size="40"/>
 <br/>
 <input type="submit" value="Upload Records"/>
 <input type="hidden" name="xmlfile" value="1"/>
