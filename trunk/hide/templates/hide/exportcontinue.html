@@ -27,16 +27,12 @@
 <script type="text/javascript">
 function submitform()
 {
-  document.myform.submit();
-}
-
-function submitwritetrain()
-{
-   var input = document.createElement("input");
-   input.setAttribute("type", "hidden");
-   input.setAttribute("name", "writetodisk");
-   input.setAttribute("value", "1");
-   document.myform.appendChild(input);
+  var selA = jQuery("#anon1").getGridParam('selarrrow');
+  var field = document.createElement("input");
+  field.setAttribute("type","hidden");
+  field.setAttribute("value",selA);
+  field.setAttribute("name","selected");
+  document.myform.appendChild(field);
   document.myform.submit();
 }
 </script>
@@ -58,23 +54,24 @@ jQuery(document).ready(function(){
 jQuery("#anon1").jqGrid({
                         datatype: "local", 
                         height: 'auto', 
-                        colNames:['Title', 'Tags', 'Labels'], 
+                        colNames:[ 'Title', 'Tags', 'Labels'], 
                         colModel:[ 
-                                        {name:'title',index:'title'}, 
-                                        {name:'tags',index:'tags'}, 
-                                        {name:'labels',index:'labels'}, 
+                           {name:'title',index:'title'}, 
+                           {name:'tags',index:'tags'}, 
+                           {name:'labels',index:'labels'}, 
 					
-                                ], 
+                        ], 
 			autowidth: true,
-                        caption: "{{count}} Objects for training and/or labeling"
+                        caption: "Objects for export",
+			multiselect: true,
                         });
 
 var mydata = [{% for key,object in objects.items %}
-        {title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" , labels:"{{object.value.labels}}", tags:"{{object.value.tags}}"},
+        {id:"{{key}}", title:"<a href=\"/hide/doc/{{key}}\">{{object.value.title}}</a>" , labels:"{{object.value.labels}}", tags:"{{object.value.tags}}"},
 {% endfor %}];
 
-for(var i=0;i<=mydata.length;i++) {
-	jQuery("#anon1").jqGrid('addRowData',i+1,mydata[i]);
+for(var i=0;i<mydata.length;i++) {
+	jQuery("#anon1").jqGrid('addRowData',mydata[i].id,mydata[i]);
 }
 
 });
@@ -93,12 +90,14 @@ HIDE v1.5: Label Documents
 {% comment %}
 <h1>HIDE v1.5</h1>
 {% endcomment %}
-<h2>Label the documents below</h2>
-<h2>You may train the AutoLabeler when finished</h2>
+<h2>Choose the documents and export format below</h2>
 <form name="myform" method="post" action="#">
 {% csrf_token %}
-<a href="javascript: submitform()">Train AutoLabeler</a> <br/>
-<a href="javascript: submitwritetrain()">Write Set to Disk</a> 
+<input type="radio" name="type" value="xml" checked/> XML (universal format) <br/>
+<input type="radio" name="type" value="json" /> JSON (javascript format) <br/>
+<input type="radio" name="type" value="hl7"/> HL7 (common medical data format. coming soon.) <br/>
+<input type="radio" name="type" value="fvs"/> FVS (sequence labeling feature vector format. coming soon.) <br/>
+<a href="javascript: submitform()">Export Selected Documents</a> 
 </form>
 <div id="filelist">
 
