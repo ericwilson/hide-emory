@@ -60,6 +60,18 @@ Select the file:
 <input type="hidden" name="xmlfile" value="1"/>
 </form>
 </div>
+<h3>Upload i2b2 XML formatted file</h3>
+<div class="white">
+<form method="post" action="." enctype="multipart/form-data">
+{% csrf_token %}
+Select the file: 
+<input type="file" name="file" size="40"/>  <br/>
+<input type="tags" name="tags" size="40"/>
+<br/>
+<input type="submit" value="Upload Records"/>
+<input type="hidden" name="i2b2file" value="1"/>
+</form>
+</div>
 <h3>Upload MIT-deid formatted file</h3>
 <div class="white">
 <form method="post" action="." enctype="multipart/form-data">

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{ block.super }}
+<style type="text/css">
+.boxed {
+	border-style: solid;
+	border-width: 1px;
+	margin-top: 5px;
+}
+
+#results table {
+	border-width: 1px;
+	border-spacing: 2px;
+	border-style: outset;
+	border-color: gray;
+	border-collapse: separate;
+	background-color: white;
+}
+#results th {
+	border-width: 1px;
+	padding: 1px;
+	border-style: dotted;
+	border-color: black;
+	background-color: white;
+	-moz-border-radius: 0px 0px 0px 0px;
+}
+#results td {
+	border-width: 1px;
+	padding: 1px;
+	border-style: dotted;
+	border-color: black;
+	background-color: white;
+	-moz-border-radius: 0px 0px 0px 0px;
+}
+
+</style>
+
+<script language="javascript" type="text/javascript">
+function submitkfold(){
+document.kfoldform.k.value = document.kform.kin.value
+document.kfoldform.submit();
+}
+</script>
+
+{% endblock %}
+
+{% block title %}HIDE v1.5: Analysis of {{ tag }}{% endblock %}
+
+{% block content %}
+<h1>Analysis of {{ tag }}</h1>
+
+<form name="kform">
+k = <input type="text" name="kin" value="{{ k }}"/>
+</form>
+
+<div id="kfold" class="boxed">
+	<h2>Create k-fold cross validation sets</h2>
+	<form name="kfoldform" method="POST">
+	   {% csrf_token %}
+	   <input type="hidden" name="kfold"/>
+	   <input type="hidden" name="k"/>
+	   <input type="button" value="Go" onclick="submitkfold();"/>
+	</form>
+	{{ kfoldsets }}
+</div>
+
+<div id="training" class="boxed">
+	<h2>Train CRF models for the k-folds</h2>
+	<form name="trainform" method="POST">
+	   {% csrf_token %}
+	   <input type="hidden" name="k" value={{ k }}/>
+	   <input type="hidden" name="train"/>
+	   <input type="Submit" value="Go"/>
+	</form>
+	{{ trainsets }}
+</div>
+<div id="testing" class="boxed">
+	<h2>Test k-folds against CRF models</h2>
+	<form name="testform" method="POST">
+	   {% csrf_token %}
+	   <input type="hidden" name="k" value={{ k }}/>
+	   <input type="hidden" name="test"/>
+	   <input type="Submit" value="Go"/>
+	</form>
+	{{ testsets }}
+</div>
+
+<div id="results" class="boxed" style="overflow:auto">
+	<h2>Results of k-folds</h2>
+	<form name="resultsform" method="POST">
+	   {% csrf_token %}
+	   <input type="hidden" name="k" value={{ k }}/>
+	   <input type="hidden" name="results"/>
+	   <input type="Submit" value="Go"/>
+	</form>
+{% autoescape off %}
+	{{ results }}
+{% endautoescape %}
+</div>
+
+<div id="clear">
+	<form name="clearform" method="POST">
+	   {% csrf_token %}
+	   <input type="hidden" name="k" value={{ k }}/>
+	   <input type="hidden" name="clear"/>
+	   <input type="Submit" value="Clear"/>
+        </form>
+</div>
+
+{% endblock %}
