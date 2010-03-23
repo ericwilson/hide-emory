@@ -76,11 +76,7 @@ COUCHDB_SERVER = 'http://127.0.0.1:5984'
 COUCHDB_USER = 'your_username'
 COUCHDB_PASS = 'your_password'
   }}}
-  * Install necessary modules for underlying utilities.  Install Lingua::EN::Tagger and the URI::Escape Perl modules.
-  {{{
-perl -MCPAN -e 'install Lingua::EN::Tagger' 
-perl -MCPAN -e 'install URI::Escape' 
-  }}}
+
   * Install necessary python modules.
   {{{
 xml.dom.minidom
