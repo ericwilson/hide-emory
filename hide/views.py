@@ -17,7 +17,7 @@ import os
 import sys
 import HIDE
 import HIDEexperiment
-from HIDE import SGMLToMallet, MalletToSGML, extractTags,doReplacement, getLegend, getReplacements, loadConfig, getTags, trainModel, addFeatures, labelMallet
+from HIDE import SGMLToMallet, FeaturesToSGML, extractTags,doReplacement, getLegendSpec, getReplacements, loadConfig, getTags, getTagsDict, trainModel, addSomeFeatures, addFeatures, labelMallet
 from tidylib import tidy_document
 import subprocess
 import xmlprinter
@@ -25,6 +25,7 @@ import StringIO
 import xml.sax.saxutils
 import shutil
 
+import tasks
 
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler 
@@ -56,10 +57,9 @@ if ( COUCHUSER != "none" ):
    SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
 
 REPLACEMENTS = getReplacements()
-LEGEND = getLegend()
+LEGEND = dict()
 
 print REPLACEMENTS
-print LEGEND
 print log
 
 try:
@@ -129,7 +129,21 @@ def add (request):
 
 @login_required(redirect_field_name='next')
 def analysislist( request ):
-   tags = getalltags( db )
+   #pull everything from the analysis folder
+   folder = HIDE.CRFMODELDIR + "/test/"
+   #tags = getalltags( db )
+   gtags = getalltags(db)
+   folders = getfolders(folder)
+
+   utags = dict()
+
+   for t in gtags:
+      utags[t] = 1 
+   for f in folders:
+      utags[f] = 1 
+
+   tags = utags.keys()
+   
    context = {
      'tags':tags,
      'path':'analysis',
@@ -145,13 +159,19 @@ def analysis( request, tag ):
    context = { 'tag':tag, 'k':k }
 
    outdir = HIDE.CRFMODELDIR + "/test/" + tag
+   if not os.path.exists(outdir):
+      os.makedirs(outdir)
+
+   SAVENAME = outdir + "/ALL.mallet"
 
    if ( request.method == "POST" ):
       if k in request.POST:
          k = request.POST['k'] 
       context['k'] = k
-      print "performing analysis"
-      if 'kfold' in request.POST:
+
+      print "viewing analysis page"
+
+      if 'mallet' in request.POST:
          objects = db.view('tags/tags')
          trainset = dict()
          for obj in objects:
@@ -163,14 +183,81 @@ def analysis( request, tag ):
          for key, object in trainset.iteritems():
             html = object['value']['text'].replace("<br>", "<br/>")
             mallettext = SGMLToMallet(html)
-            features.append( addFeatures(mallettext) )
+ #           features.append( addFeatures(mallettext) )
+            suite = HIDE.MalletToSuite( mallettext )
+            features.append(suite)
 
+         HIDEexperiment.writeMalletSetToDisk( SAVENAME, features)
+
+      if 'kfold' in request.POST:
          print "Creating " + str(k) + " sets"
          k = int(k)
+         features = HIDEexperiment.readMalletSetFromDisk(SAVENAME)
+         print "read in " + str(len(features)) + " documents from file"
          (trainset, testset) = HIDEexperiment.createKFold( features, k )
+         #the trainset and testset contains indexes into the features
+         # array
+         for i in range(k):
+            HIDEexperiment.writeFoldFileToDisk(outdir + "/TEST" + str(i) + ".fold", testset[i])
+            HIDEexperiment.writeFoldFileToDisk(outdir + "/TRAIN" + str(i) + ".fold", trainset[i])
+
          #write the sets to disk
          #print "We got " + str(trainset)
-         HIDEexperiment.writeKToDisk( outdir, trainset, testset, int(k) )
+#         HIDEexperiment.writeKToDisk( outdir, trainset, testset, int(k), '.mallet' )
+      if 'features' in request.POST:
+         k = int(k)
+
+         ftypes = dict()
+         flist = request.POST.getlist('ftype')
+         for f in flist:
+               ftypes[f] = 1
+         
+
+         print "creating files for the following:"
+         print str(ftypes)
+
+         trainindex = [None]*k
+         testindex = [None]*k
+         for z in range(k):
+            trainindex[z] = []
+            testindex[z] = []
+
+         print "reading in mallet from disk"
+         mallet = HIDEexperiment.readMalletSetFromDisk(SAVENAME)
+         print "done reading in mallet from disk"
+      
+         #add features to each of the mallet documents
+         print "adding features to mallet files"
+         features = []
+         j = 1
+         for m in mallet:
+            print "adding features to mallet file " + str(j)
+            features.append(addSomeFeatures(m, ftypes))
+            j += 1
+
+         #build the feature files to be written to disk
+         print "retrieving fold information from disk"
+         for i in range(k):
+            trainindex[i] = HIDEexperiment.readFoldFileFromDisk( outdir + "/TRAIN" + str(i) + ".fold" )
+            testindex[i] = HIDEexperiment.readFoldFileFromDisk( outdir + "/TEST" + str(i) + ".fold" )
+
+         trainset = [None]*k
+         testset = [None]*k
+         for z in range(k):
+            trainset[z] = ''
+            testset[z] = ''
+
+         print "building sets from fold information"
+         for i in range(k):
+            for j in trainindex[i]:
+               trainset[i] += features[j]
+            for j in testindex[i]:
+               testset[i] += features[j]
+            
+         outlabel = request.POST['outdir']
+         tempoutdir = HIDE.CRFMODELDIR + "/test/" + outlabel
+         print "writing sets to disk"
+         HIDEexperiment.writeKToDisk( tempoutdir, trainset, testset, k, '.features' )
       if 'train' in request.POST:
          (trainset, testset, k) = HIDEexperiment.readSetsFromDisk( outdir )
          HIDEexperiment.runTrainOnDisk( outdir, trainset )
@@ -187,6 +274,8 @@ def analysis( request, tag ):
          shutil.rmtree( outdir )
 
    (kfoldinfo,k) = HIDEexperiment.getKFoldInfoFromDisk( HIDE.CRFMODELDIR + "/test/" + tag )
+   context['features'] = HIDEexperiment.getFeaturesInfoFromDisk( outdir )
+   context['mallet'] = HIDEexperiment.getSetInfoFromDisk( outdir )
    context['kfoldsets'] = kfoldinfo
    context['trainsets'] = HIDEexperiment.getTrainInfoFromDisk( outdir )
    context['testsets'] = HIDEexperiment.getTestInfoFromDisk( outdir )
@@ -329,7 +418,7 @@ def handle_uploaded_xml_file(f, tagi):
    parser.setContentHandler(curHandler)
    parser.parse(f)
    reports = curHandler.reports
-   #print reports
+   print str(reports)
    for k,v in sorted(reports.iteritems()):
       for x,y in sorted(v.iteritems()):
          #create an object and put it in the couchdb
@@ -427,6 +516,13 @@ def handle_uploaded_mit_file(f):
 
 @login_required(redirect_field_name='next')
 def index(request):
+   result = tasks.trainCRF.delay("exec something")   
+
+   while not result.ready():
+      print "waiting for task to finish"
+
+   print "task returned: " + str(result.result)
+
    return render_to_response('hide/index.html',{}, context_instance=RequestContext(request))
    
 @login_required(redirect_field_name='next')
@@ -449,6 +545,8 @@ def deidentify( request, id ):
     print "replaced " + str(repl)
    
     doc['text'] = deid
+
+    LEGEND = getLegendSpec( getTagsDict(html) );
    
     context = {
        'row':doc,
@@ -484,7 +582,7 @@ def evaluate( request ):
          mallet = f.read()
          f.close()
          print "running evaluation on " + fv + " with " + crf
-	 outfilename = CRFMODELDIR + "/" + request.POST['outfile']
+         outfilename = CRFMODELDIR + "/" + request.POST['outfile']
          #outfilename = CRFMODELDIR + "/" + fv + ".results"
          results = HIDE.testModel(outfilename, CRFMODELDIR + "/" + crf, mallet)
          html = HIDEexperiment.calcAccuracyHTML(results)
@@ -529,9 +627,6 @@ def autolabel( request, id ):
    print "[" + crffile + "]"
    doc['id'] = id
    html = doc['text'].replace("<br>", "<br/>")
-   xhtml, errors = tidy_document( html,
-      options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-   #print "xhtml:" + xhtml
    
    model = CRFMODELDIR + crffile
    
@@ -543,14 +638,16 @@ def autolabel( request, id ):
       return render_to_response('hide/error.html', context, context_instance=RequestContext(request))
 
    #convert the xhtml into mallet
-   mallet = SGMLToMallet(xhtml)
-
-   #add features to the mallet
-   features = addFeatures(mallet)
+   mallet = SGMLToMallet(html)
+   suite = HIDE.MalletToSuite( mallet )
+   features = addFeatures(suite)
+   features += "\n";
    #print features
    resultsmallet = labelMallet( model, features )
-   sgml = MalletToSGML(resultsmallet)
+   sgml = FeaturesToSGML(resultsmallet)
+#   print "SGML = " + sgml
    doc['text'] = sgml
+   LEGEND = getLegendSpec( getTagsDict(sgml) )
    context = {
       'row':doc,
       'displaytags':LEGEND,
@@ -571,6 +668,7 @@ def detail(request,id):
    db[id] = doc
    doc['id'] = id
 #   tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
+   LEGEND = getLegendSpec( getTagsDict(doc['text']) )
    context = {
       'row':doc,
       'displaytags':LEGEND,
@@ -590,6 +688,7 @@ def anondoc(request,id):
    deiddb[id] = doc
    doc['id'] = id
    #tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
+   LEGEND = getLegendSpec( getTagsDict(doc['text']) )
    context = {
       'row':doc,
       'displaytags':LEGEND,
@@ -614,26 +713,30 @@ def train(request,tag):
    
    if ( request.method == "POST" ):
       features = ""
+      print "computing features"
       for key, object in trainset.iteritems():
          html = object['value']['text'].replace("<br>", "<br/>")
-   	 xhtml, errors = tidy_document( html,
-      		options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-         mallettext = SGMLToMallet(xhtml)
-         features += addFeatures(mallettext)
-      
+         mallettext = SGMLToMallet(html)
+         suite = HIDE.MalletToSuite( mallettext )
+         features += addFeatures(suite)
+
       #save the features to file for debugging purposes
       #TODO - set a debug option in the config file
+      #convert the features into suite format
+      print "writing features to disk"
       featurefile = CRFMODELDIR + tag + ".features"
       f = open( featurefile, 'w')
-      f.write(features)
+      f.write(features + "\n")
       f.close()
+      print "done writing features to disk"
+      
 
       if 'writetodisk' in request.POST:
          return render_to_response('hide/traincontinue.html', context, context_instance=RequestContext(request))
 
       model = CRFMODELDIR + tag + ".crf"
       print "about to do train"
-      trainModel( model, features )
+      trainModel( model, suite )
       
       return render_to_response('hide/traincomplete.html', context, context_instance=RequestContext(request))
    
@@ -838,7 +941,15 @@ def getalltags( db ):
    keys = alltags.keys()
    keys.sort()
    return keys
-   
+
+def getfolders( folder ):
+   folders = []
+   for fileName in os.listdir ( folder ):
+      print "checking on " + folder + "/" + fileName
+      if os.path.isdir( folder + "/" + fileName ):
+         folders.append(fileName)
+   return folders
+ 
 
 def randomReport( request ):
    #this randomly generates a record for the hide system
@@ -872,46 +983,3 @@ def randomReport( request ):
    }
 
    return render_to_response('hide/report.html', context, context_instance=RequestContext(request))
-
-@login_required(redirect_field_name='next')
-def runtests ( request, tag ):
-   #perform k fold cross validation on the specified tag group.
-   objects = db.view('tags/tags')
-   trainset = dict()
-   for obj in objects:
-      if obj['key'] == tag:
-         obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
-         trainset[obj['id']] = obj
-   
-   context = {
-      'objects':trainset,
-      'tags': tag,
-   }
-   
-   
-   print "about to do train"
-   features = [] 
-   for key, object in trainset.iteritems():
-      html = object['value']['text'].replace("<br>", "<br/>")
-      mallettext = SGMLToMallet(html)
-      features.append( addFeatures(mallettext) )
-   
-
-   #features is an array
-   #TODO -update this to read from user
-   k = 10
-   (trainset, testset) = HIDEexperiment.createKFold( features, k )
-   results = HIDEexperiment.runKFoldTest( "/tmp/", trainset, testset, k )
-   for r in range(len(results)):
-      print >> sys.stderr, "writing out results for " + str(r)
-      f = open ( "/tmp/test" + str(r) + ".results", 'w' )
-      f.write(results[r])
-      f.close()
-   
-   html = HIDEexperiment.calcAccuracyHTML(results, k)
-
-   print >> sys.stderr, "done with runtests\n" + html
-
-   context = {'accuracy':html}
-   
-   return render_to_response('hide/accuracy.html', context, context_instance=RequestContext(request))

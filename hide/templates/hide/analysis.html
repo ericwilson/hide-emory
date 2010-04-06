@@ -6,7 +6,8 @@
 <style type="text/css">
 .boxed {
 	border-style: solid;
-	border-width: 1px;
+	border-width: 2px;
+   border-color: #6688AA;
 	margin-top: 5px;
 }
 
@@ -35,6 +36,13 @@
 	-moz-border-radius: 0px 0px 0px 0px;
 }
 
+#mallet { width: 70%; margin-left: auto; margin-right: auto; background-color: white; }
+#kfold { width: 70%; margin-left: auto; margin-right: auto; background-color: white; }
+#features { width: 70%; margin-left: auto; margin-right: auto; background-color: white; }
+#training { width: 70%; margin-left: auto; margin-right: auto; background-color: white; }
+#testing { width: 70%; margin-left: auto; margin-right: auto; background-color: white; }
+#results { width: 99%; margin-left: auto; margin-right: auto; background-color: white; font-size: .85em; }
+
 </style>
 
 <script language="javascript" type="text/javascript">
@@ -55,15 +63,42 @@ document.kfoldform.submit();
 k = <input type="text" name="kin" value="{{ k }}"/>
 </form>
 
+<div id="mallet" class="boxed">
+   <h2>Write mallet file to disk</h2>
+   <form name="malletform" method="POST">
+      {%csrf_token%}
+      <input type="hidden" name="mallet"/>
+	   <input type="hidden" name="k"/>
+      <input type="Submit" value="Go"/>
+   </form>
+   {{mallet}}
+</div>
+
 <div id="kfold" class="boxed">
 	<h2>Create k-fold cross validation sets</h2>
 	<form name="kfoldform" method="POST">
 	   {% csrf_token %}
 	   <input type="hidden" name="kfold"/>
-	   <input type="hidden" name="k"/>
+	   <input type="hidden" name="k" value={{ k }}/>
 	   <input type="button" value="Go" onclick="submitkfold();"/>
 	</form>
 	{{ kfoldsets }}
+</div>
+
+<div id="features" class="boxed">
+   <h2>Write feature files to disk</h2>
+   <form name="featuresform" method="POST">
+      {%csrf_token%}
+      <input type="text" name="outdir" value="{{tag}}"/>
+      <input type="checkbox" name="ftype" value="regex"/>Regex
+      <input type="checkbox" name="ftype" value="affix"/>Affix
+      <input type="checkbox" name="ftype" value="context"/>Context
+      <input type="checkbox" name="ftype" value="dictionary"/>Dictionary
+	   <input type="hidden" name="k" value={{ k }}/>
+      <input type="hidden" name="features"/>
+      <input type="Submit" value="Go"/>
+   </form>
+   {{features}}
 </div>
 
 <div id="training" class="boxed">

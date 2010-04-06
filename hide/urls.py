@@ -22,6 +22,5 @@ urlpatterns = patterns('hide.views',
     (r'^analysis/(?P<tag>.+)/?$', 'analysis'),
     (r'^anondoc/(?P<id>\w+)/?', 'anondoc'),
     (r'^delete_label/(?P<tag>.+)/?', 'delete_label'),
-    (r'^ktest/(?P<tag>.+)/', 'runtests'),
 #    (r'^reset','reset'), 
 )
