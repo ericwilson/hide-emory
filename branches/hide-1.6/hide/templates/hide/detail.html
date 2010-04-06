@@ -6,6 +6,10 @@
 <link rel="stylesheet" href="/site_media/screen.css" type="text/css" media="screen" charset="utf-8">
 <style type="text/css" media="screen">
 
+#capture pre{
+   font-size:0.8em;
+}
+
 #removes {
 	border: 0;
 	padding: 0;
@@ -27,28 +31,31 @@
 
 #capture {
 	position: absolute;
-	width: 700px;
 	top: 40px;
 	line-height: 250%;
-	left: 50%;
-	margin-left: -350px;
+	left: 125px;
+/*   right: 5px; */
 	border: 5px solid #6688aa; 
 	background-color: white;
+   margin-right: 10px;
+   margin-bottom: 10px;
 }
 
 #leftbar {
-	position: fixed;
+	position: absolute;
+   width: 100px;
 	left: 5px;
-	top: 30px;
+	top: 10px;
 	border: 2px solid #6688aa;
 	background-color:white;
 	text-align: center;
 }
 
 #sidebar {
-	position: fixed;
-	right: 5px;
-	top: 30px;
+	position: absolute; 
+   width: 100px;
+	left: 5px;
+	top: 100px;
 	border: 2px solid #6688aa; 
 	background-color: white; 
 	text-align: center;
@@ -167,8 +174,8 @@ function delete_link(tag, name) {
 	link = $("<div></div>");
 	link.addClass("hov");
 	link.css("left", tag.offset().left );
-	link.css("top", tag.offset().top - 20 );
-	link.css("padding", "2px 3px" );
+	link.css("top", tag.offset().top - 25 );
+	link.css("padding", "1px 1px" );
 	link.text("remove " + name);
 	$("#removes").append(link);
 	link.bind("click", function(event) { 
@@ -279,7 +286,7 @@ function sendnormal(f) {
 
 <div id="capture">
 {% autoescape off %}
-{{ row.text }}
+<pre>{{ row.text }}</pre>
 {% endautoescape %}
 </div>
 

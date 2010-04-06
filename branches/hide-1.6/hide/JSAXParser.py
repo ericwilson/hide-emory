@@ -6,7 +6,6 @@ import re
 import urllib
 
 class SGMLToMalletHandler( ContentHandler ):
-  mallet = ""
 
   def __init__ (self):
      self.lastTag = 'O'
@@ -134,6 +133,7 @@ class ReportXMLHandler(ContentHandler):
        self.in_rid += 1
     elif name == 'title':
        self.in_title += 1
+       print "start title " + str(self.in_title)
     elif name == 'content':
        self.in_content += 1
        self.content = ''
@@ -151,6 +151,7 @@ class ReportXMLHandler(ContentHandler):
        self.in_rid -= 1
     elif name == 'title':
        self.in_title -= 1
+       print "end title " + str(self.in_title)
     elif name == 'content':
        if self.pid != -1:
           self.reports[self.pid][self.rid] = self.content 
@@ -158,8 +159,8 @@ class ReportXMLHandler(ContentHandler):
           print "processing " + self.title
           if '-1' not in self.reports:
              self.reports['-1'] = dict()
-             self.reports['-1'][self.title] = self.content
-             self.in_content -= 1
+          self.reports['-1'][self.title] = self.content
+       self.in_content -= 1
     elif name != 'reports':
        self.content += '</' + name + '>'
     return
@@ -176,6 +177,8 @@ class ReportXMLHandler(ContentHandler):
     #   print ch
        self.rid = ch
     elif self.in_title == 1:
+       print "in title"
+       print ch
        self.title = ch
    # else:
    #    print "Parsing error: " + ch
