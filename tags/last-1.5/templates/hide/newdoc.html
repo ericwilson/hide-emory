@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{ block.super }}
+<link rel="stylesheet" href="/site_media/screen.css" type="text/css" media="screen" charset="utf-8">
+<script type="text/javascript" src="/site_media/jquery.js"></script>
+<script type="text/javascript" src="/site_media/ui/ui.core.js"></script>
+<script type="text/javascript" src="/site_media/ui/ui.accordion.js"></script>
+<script type="text/javascript">
+  $(document).ready(function(){
+    $("#accordion").accordion({ autoHeight: false, collapsible: true, active: false });
+  });
+</script>
+<style type="text/css">
+#accordion {
+   background-color: #CCCCCC;
+   border-color: black;
+   border-width: 1px;
+}
+div.white {
+   background-color: white;
+   border-style: solid;
+   border-width: 1px;
+   border-color: #6688AA;
+   padding: 3px;
+}
+#edit{
+    background-color: white;
+     width: 800px;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: auto;
+  margin-right: auto;
+
+  text-align: center;
+  padding: 10px;
+border:2px solid #6688AA;
+}
+
+
+</style>
+{% endblock %}
+
+{% block title %}HIDE v1.5: {{ row.title }}{% endblock %}
+
+{% block content %}
+
+<div id="edit">
+<div id="accordion">
+<h3>Upload XML formatted file</h3>
+<div class="white">
+<form method="post" action="." enctype="multipart/form-data">
+{% csrf_token %}
+Select the file: 
+<input type="file" name="file" size="40"/>  <br/>
+<input type="tags" name="tags" size="40"/>
+<br/>
+<input type="submit" value="Upload Records"/>
+<input type="hidden" name="xmlfile" value="1"/>
+</form>
+</div>
+<h3>Upload i2b2 XML formatted file</h3>
+<div class="white">
+<form method="post" action="." enctype="multipart/form-data">
+{% csrf_token %}
+Select the file: 
+<input type="file" name="file" size="40"/>  <br/>
+<input type="tags" name="tags" size="40"/>
+<br/>
+<input type="submit" value="Upload Records"/>
+<input type="hidden" name="i2b2file" value="1"/>
+</form>
+</div>
+<h3>Upload MIT-deid formatted file</h3>
+<div class="white">
+<form method="post" action="." enctype="multipart/form-data">
+{% csrf_token %}
+Select the file: 
+<input type="file" name="file" size="40"/> 
+<br/>
+<input type="submit" value="Upload Records"/>
+<input type="hidden" name="mitfile" value="1"/>
+</form>
+</div>
+<h3>Copy and Paste a Single Record</h3>
+<div class="white">
+<form method="post" action=".">
+{% csrf_token %}
+<table>
+  <tr>
+    <td> Title for document </td>
+    <td><input type="text" name="title" value=""></td>
+  </tr>
+  <tr>
+    <td> Tags for document </td>
+{% autoescape off %}
+    <td><input type="text" name="tags" style="width:300px;" value=""></td>
+{% endautoescape %}
+  </tr>
+  <tr>
+    <td> Text </td>
+    <td><textarea style="width:600px; height:600px;" name="text"></textarea></td>
+  </tr>
+</table>
+<input type="submit" value="Upload Record"/>
+</form>
+</div>
+</div>
+</div>
+
+{% endblock %}
