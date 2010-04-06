@@ -88,6 +88,7 @@ datetime
 random
 simplejson
 tidylib
+couchdbkit
   }}}
 
   * Let HIDE know where the underlying software powering the user interface is by specifying the configuration file:
