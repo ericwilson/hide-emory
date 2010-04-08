@@ -428,3 +428,108 @@ def calcAccuracyHTMLFromDisk(outdir):
 #   html += "</tr>"
    html += "</table>"
    return html
+
+def calcAccuracyHTML(results):
+   phicorrect = 0
+   phiincorrect = 0
+   phimissed = 0
+
+   correct = 0
+   total = 0
+   stats = dict()
+   lines = results.split("\n") 
+   for l in lines:
+      l = l.strip()
+      if ( l == '' ):
+         continue
+      vals = l.split("\t") 
+      truel = vals[0]
+      predl = vals[len(vals)-1]
+      if ( (truel != 'O') or (predl != 'O') ):
+         total += 1
+         if ( truel == 'O' ):
+            phiincorrect += 1
+         elif ( predl == 'O' ):
+            phimissed += 1
+         else:
+            phicorrect += 1
+         if truel not in stats:
+            stats[truel] = dict()
+            stats[truel]['TP'] = 0
+            stats[truel]['FP'] = 0
+            stats[truel]['FN'] = 0
+            stats[truel]['PRED'] = dict()
+
+         if predl not in stats:
+            stats[predl] = dict()
+            stats[predl]['TP'] = 0
+            stats[predl]['FP'] = 0
+            stats[predl]['FN'] = 0
+            stats[predl]['PRED'] = dict()
+
+         if predl not in stats[truel]['PRED']:
+            stats[truel]['PRED'][predl] = 0
+
+         #store conf. matrix
+         stats[truel]['PRED'][predl]+=1
+
+         if ( truel == predl ):
+            correct += 1
+            stats[truel]['TP'] += 1
+         else:
+            stats[truel]['FN'] += 1
+            stats[predl]['FP'] += 1
+
+   print "acc: " + str(correct) + " / " + str(total)
+
+   acc = float(correct) / float(total)
+
+   phiprec = float(phicorrect) / float(total)
+   phirec = float(total - phimissed) / float(total)
+   phif1 = 0
+
+   if ( phiprec + phirec != 0 ):
+      phif1 = (2.0 * phiprec * phirec) / ( phiprec + phirec )
+   
+   print "made it past the loop"
+   html = ""
+   html += "-- Accuracy: " + str(correct) + "/" + str(total) + " = " + str(acc) + "<br/>"
+   html += "-- Phi. Prec: " + str(phiprec) + " Rec: " + str(phirec) + " F1: " + str(phif1) + "<br/>"
+   html += "-- Confusion matrix and Per-class accuracy: Precision, Recall, F1<br/>"
+   html += "<table>"
+   html += "<tr><td>True\\Pred</td>"
+   for c in sorted( stats.keys() ):
+      html += "<td>" + c + "</td>"
+
+   html += "<td>Total</td><td>Prec</td><td>Rec</td><td>F1</td>"
+   html += "</tr>"
+   for c in sorted( stats.keys() ):
+      html += "<tr>"
+      html += "<td>" + c + "</td>"
+      tot = 0
+      for p in sorted( stats.keys() ):
+         if p in stats[c]['PRED']:
+            tot += stats[c]['PRED'][p]
+            html += "<td>"+ str(stats[c]['PRED'][p]) +"</td>"
+         else:
+            html += "<td>0</td>"
+            
+      html += "<td>" + str(tot) + "</td>"
+      prec = 0
+      rec = 0
+      f1 = 0
+      print c + " TP: " + str(stats[c]['TP'])
+      print c + " FP: " + str(stats[c]['FP'])
+      print c + " FN: " + str(stats[c]['FN'])
+      if ( stats[c]['TP'] + stats[c]['FP'] != 0 ):
+         prec = float(stats[c]['TP']) /  float(stats[c]['TP'] + stats[c]['FP'])
+      if ( stats[c]['TP'] + stats[c]['FN'] != 0  ):
+         rec = float(stats[c]['TP']) / float(stats[c]['TP'] + stats[c]['FN'])
+      if ( prec + rec != 0 ):
+         f1 = (2.0 * prec * rec) / ( prec + rec )
+
+      html += "<td>" + str(prec) + "</td><td>" + str(rec) + "</td><td>" + str(f1) + "</td><td>" + c + "</td>"
+      html += "</tr>"
+   html += "</table>"
+   print "made it past the html"
+   return html
