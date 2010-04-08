@@ -7,7 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 
 from couchdbkit import *
-from restkit.httpc import BasicAuth
+from couchdbkit.loaders import FileSystemDocsLoader
+from couchdbkit.ext.django.loading import get_db
+from restkit import BasicAuth
 import datetime
 import random
 import simplejson as json
@@ -34,11 +36,6 @@ from JSAXParser import i2b2XMLHandler
 
 
 
-class Object(Document):
-   author = StringProperty()
-   title = StringProperty()
-   text = StringProperty()
-   tags = StringProperty()
 
 
 #first thing is to initialize the HIDE module from the config file
@@ -65,6 +62,11 @@ print log
 try:
    db = SERVER.get_or_create_db('hide_objects')
    deiddb = SERVER.get_or_create_db('hide_deid')
+   couch_schema = getattr(settings, 'COUCHDB_SCHEMA', 'error')
+   print "Syncing schema " + couch_schema
+   loader = FileSystemDocsLoader(couch_schema)
+   loader.sync(db)
+   print "done syncing schema"
 except :
    print "Couldn't connect to couchdb"
 
@@ -585,7 +587,9 @@ def evaluate( request ):
          outfilename = CRFMODELDIR + "/" + request.POST['outfile']
          #outfilename = CRFMODELDIR + "/" + fv + ".results"
          results = HIDE.testModel(outfilename, CRFMODELDIR + "/" + crf, mallet)
+         print "calculating accuracy"
          html = HIDEexperiment.calcAccuracyHTML(results)
+         print "done calculating accuracy"
          context = {'accuracy':html}
 	 return render_to_response('hide/accuracy.html', context, context_instance=RequestContext(request))
       else:
