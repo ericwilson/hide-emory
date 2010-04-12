@@ -16,6 +16,7 @@ from tidylib import tidy_document
 
 
 from JSAXParser import SGMLToMalletHandler
+from JSAXParser import SGMLToSuiteHandler
 
 
 from xml.sax import make_parser
@@ -106,8 +107,8 @@ def getLegendSpec( matches ):
       name = l.find('label').text.lower()
       color = l.find('color').text
       print "comparing "  + name + " to " + str(matches)
-      if name not in matches:
-         continue
+#      if name not in matches:
+#         continue
       print "adding " + name + " to legend"
       repl[name] = color
    return repl
@@ -154,6 +155,23 @@ def SGMLToMallet ( sgml ):
 #   print "mallet " + mallet
    return mallet
 
+def SGMLToSuite ( sgml ):
+   xhtml, errors = tidy_document( "<pre>" + sgml + "</pre>",
+      options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
+#   print "tidy = " + xhtml 
+   #pull everything between pre tags
+   spre = re.compile('^<pre>', re.I)
+   epre = re.compile('</pre>$', re.I)
+   xhtml = re.sub(spre, '', xhtml)
+   xhtml = re.sub(epre, '', xhtml)
+   xhtml = '<report>' + xhtml + '</report>'
+   parser = make_parser()
+   curHandler = SGMLToSuiteHandler()
+   #parser.setContentHandler(curHandler)
+   xml.sax.parseString(xhtml, curHandler)
+   mallet = curHandler.mallet
+#   print "mallet " + mallet
+   return mallet
 #path= HIDELIB + "sgml2mallet-stdin.pl"
 #print >> sys.stderr, "[" + path + "]"
 #add features to the mallet file
@@ -341,6 +359,7 @@ def addSomeFeatures( suite, ftypes ):
    suite = suite.strip()
    fvs = suite.split("\n")
    for i in range(len(fvs)):
+      print "adding features to token " + str(i)
       fvs[i] = fvs[i].strip()
       if fvs[i] == '':
          print "warning we have an empty FV"

@@ -40,6 +40,40 @@ class SGMLToMalletHandler( ContentHandler ):
      return
 
 
+class SGMLToSuiteHandler( ContentHandler ):
+
+  def __init__ (self):
+     self.lastTag = 'O'
+     self.first = True
+     self.mallet = ""
+
+  def startElement(self, name, attrs):
+     name = name.lower()
+     if name != 'report':
+       self.lastTag = name
+       self.first = True
+     return
+
+  def endElement( self, name):
+     self.lastTag = 'O'
+     return
+
+  def characters(self, ch):
+     chars = re.split( '(\W)', ch )
+     for c in chars:
+        if c == '':
+           continue
+        c = urllib.quote(c)
+        if self.lastTag != 'O':
+          if self.first:
+           self.mallet += "B-" + self.lastTag + "\tTERM_" + c + "\n"
+           self.first = False
+          else:
+           self.mallet += "I-" + self.lastTag + "\tTERM_" + c + "\n"
+        else:
+          self.mallet += "O\tTERM_" + c + "\n"
+     return
+
 class i2b2XMLHandler(ContentHandler):
  reports = dict()
  title = ""

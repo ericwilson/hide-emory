@@ -518,12 +518,12 @@ def handle_uploaded_mit_file(f):
 
 @login_required(redirect_field_name='next')
 def index(request):
-   result = tasks.trainCRF.delay("exec something")   
+#   result = tasks.trainCRF.delay("exec something")   
 
-   while not result.ready():
-      print "waiting for task to finish"
+#   while not result.ready():
+#      print "waiting for task to finish"
 
-   print "task returned: " + str(result.result)
+#   print "task returned: " + str(result.result)
 
    return render_to_response('hide/index.html',{}, context_instance=RequestContext(request))
    
@@ -550,9 +550,11 @@ def deidentify( request, id ):
 
     LEGEND = getLegendSpec( getTagsDict(html) );
    
+    models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
     context = {
        'row':doc,
        'displaytags':LEGEND,
+       'models':models,
       }
     return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
    
@@ -642,8 +644,8 @@ def autolabel( request, id ):
       return render_to_response('hide/error.html', context, context_instance=RequestContext(request))
 
    #convert the xhtml into mallet
-   mallet = SGMLToMallet(html)
-   suite = HIDE.MalletToSuite( mallet )
+   suite = HIDE.SGMLToSuite(html)
+#   suite = HIDE.MalletToSuite( mallet )
    features = addFeatures(suite)
    features += "\n";
    #print features
@@ -652,9 +654,11 @@ def autolabel( request, id ):
 #   print "SGML = " + sgml
    doc['text'] = sgml
    LEGEND = getLegendSpec( getTagsDict(sgml) )
+   models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
    context = {
       'row':doc,
       'displaytags':LEGEND,
+      'models':models,
    }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -667,15 +671,24 @@ def detail(request,id):
    except ResourceNotFound:
       raise Http404        
    if request.method =="POST":
-      doc['text'] = request.POST['tagtext']
+      tagtext = request.POST['tagtext']
+      #pull out the wrapped pre tags from the report text before saving
+      res = re.compile(r'<pre>(.*)</pre>', (re.M | re.I | re.S))
+      m = res.search(tagtext)
+      if m:
+         tagtext = m.group(1)
+
+      doc['text'] = tagtext
       doc['tags'] = request.POST['newtags']
    db[id] = doc
    doc['id'] = id
 #   tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
    LEGEND = getLegendSpec( getTagsDict(doc['text']) )
+   models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
    context = {
       'row':doc,
       'displaytags':LEGEND,
+      'models': models,
       }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -693,9 +706,11 @@ def anondoc(request,id):
    doc['id'] = id
    #tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
    LEGEND = getLegendSpec( getTagsDict(doc['text']) )
+   models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
    context = {
       'row':doc,
       'displaytags':LEGEND,
+      'models':models,
       }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -720,8 +735,9 @@ def train(request,tag):
       print "computing features"
       for key, object in trainset.iteritems():
          html = object['value']['text'].replace("<br>", "<br/>")
-         mallettext = SGMLToMallet(html)
-         suite = HIDE.MalletToSuite( mallettext )
+#         mallettext = SGMLToMallet(html)
+#         suite = HIDE.MalletToSuite( mallettext )
+         suite = HIDE.SGMLToSuite( html )
          features += addFeatures(suite)
 
       #save the features to file for debugging purposes
@@ -740,7 +756,7 @@ def train(request,tag):
 
       model = CRFMODELDIR + tag + ".crf"
       print "about to do train"
-      trainModel( model, suite )
+      trainModel( model, features )
       
       return render_to_response('hide/traincomplete.html', context, context_instance=RequestContext(request))
    
