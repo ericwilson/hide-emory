@@ -5,16 +5,29 @@
 {{block.super}}
 <style type="text/css" media="screen">
 #welcome{
+   position: absolute;
+   top: 30px;
     background-color: white;
-     width: 600px;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-left: auto;
-  margin-right: auto;
-
-  text-align: center;
+     width: 700px;
+  margin-left: 200px;
   padding: 10px;
-border:2px solid #6688AA;
+  border:1px solid #6688AA;
+}
+
+#tasks{
+   position: absolute;
+   top: 30px;
+  text-align: center;
+  padding: 3px;
+   background-color: white;
+/*   width: 150px; */
+   margin-left: 5px;
+  border:1px solid #6688AA;
+}
+
+#small{
+   font-size: 0.7em;
+   text-align: center;
 }
 </style>
 {% endblock %}
@@ -24,23 +37,28 @@ HIDE
 {% endblock %}
 
 {% block content %}
-<div id="welcome">
-<h1>Welcome to HIDE</h1>
-<br/>
-<h2>Tasks</h2>
-<a href="./label/">Label Documents</a><br/>
+<div id="tasks">
+<a href="./train/">Label Documents</a><br/>
 <a href="./anonymize/">Anonymize Documents</a><br/>
-<br/>
-{% comment %}
-<a href="./viewanonymized/">View Anonymized Documents</a><br/>
-{% endcomment %}
-<h2>Administration</h2>
 <a href="./add/">Import Documents</a> <br/>
 <a href="./export/">Export Documents</a> <br/>
 <a href="./list/">List All Documents</a><br/>
 <a href="./analysis/">Analysis</a> <br/>
 <a href="./evaluate/">Evaluate</a> <br/>
 <a href="./settings/">Settings</a> <br/>
+</div>
+
+<div id="welcome">
+<h1>Welcome to HIDE</h1>
+HIDE (Health Information DE-identification) is a tool for managing de-identification models for
+medical data. HIDE provides an annotation tool that can be used to manually or automatically 
+de-identify medical records. HIDE is currently under heavy <a href="http://code.google.com/p/hide-emory">development</a> and more features are coming soon.
+Click around and have fun. 
+<div id="small">
+Any questions or comments should be directed
+to <a href="mailto:jgardn3@emory.edu">James Gardner</a>.
+You may change the content of this page at /path/to/hide_proj/hide/templates/hide/index.html
+</div>
 </div>
 {% endblock %}
 

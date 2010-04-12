@@ -34,11 +34,13 @@ def loadConfig( filename ):
    global CRFMODELDIR
    global MAXMEM
    global DICTIONARY
+   global CRFSUITEBIN
    CONFIGTREE = ElementTree.parse(filename)
    croot = CONFIGTREE.getroot()
    HIDELIB = croot.find('hidelib').text
    EMORYCRFLIB = croot.find('crflib').text 
    CRFMODELDIR = croot.find('crfmodeldir').text
+   CRFSUITEBIN = croot.find('crfsuitebin').text
    MAXMEM = croot.find('maxmem').text
    DICTIONARY = buildDictionary( croot.find('dictionary').text )
    f = open('/tmp/dict.text', 'w')
@@ -49,7 +51,7 @@ def loadConfig( filename ):
 
 def buildDictionary( dir ):
    """Builds the dictionary concept map based on the specified directory"""
-   print "reading dictionary from " + dir
+   print >>sys.stderr, "reading dictionary from " + dir
    DICTIONARY = dict()
    for fileName in os.listdir ( dir ):
       m = re.match('(.*).txt$', fileName)
@@ -106,10 +108,10 @@ def getLegendSpec( matches ):
    for l in root.findall('gui/tag'):
       name = l.find('label').text.lower()
       color = l.find('color').text
-      print "comparing "  + name + " to " + str(matches)
+      print >>sys.stderr, "comparing "  + name + " to " + str(matches)
 #      if name not in matches:
 #         continue
-      print "adding " + name + " to legend"
+      print >>sys.stderr, "adding " + name + " to legend"
       repl[name] = color
    return repl
 
@@ -199,10 +201,10 @@ def MalletToSuite ( mallet ):
 
 def MalletToSGML ( mallet ):
    sgml = ''
-   print "mallet = " + mallet
+   #print "mallet = " + mallet
    fvs = re.split('\n' , mallet)
    currentTag = "O"
-   print "converting text with " + str(len(fvs)) + "tokens"
+   print >>sys.stderr, "converting text with " + str(len(fvs)) + "tokens"
    for fv in fvs:
       #get the term from the fvs
       fv = fv.strip()
@@ -220,8 +222,8 @@ def MalletToSGML ( mallet ):
             go = True
          else:
             if ( i > 2 ):
-               print "ERROR: we don't have a term yet [" + token + "]"
-               print str(features)
+               print >>sys.stderr, "ERROR: we don't have a term yet [" + token + "]"
+               print >>sys.stderr, str(features)
             i += 1
       #print features
       label = features[len(features)-1]
@@ -247,10 +249,10 @@ def MalletToSGML ( mallet ):
 	
 def FeaturesToSGML ( mallet ):
    sgml = ''
-   print "mallet = " + mallet
+   #print "mallet = " + mallet
    fvs = re.split('\n' , mallet)
    currentTag = "O"
-   print "converting text with " + str(len(fvs)) + "tokens"
+   #print "converting text with " + str(len(fvs)) + "tokens"
    for fv in fvs:
       #get the term from the fvs
       fv = fv.strip()
@@ -268,8 +270,8 @@ def FeaturesToSGML ( mallet ):
             go = True
          else:
             if ( i > 2 ):
-               print "ERROR: we don't have a term yet [" + token + "]"
-               print str(features)
+               print >>sys.stderr, "ERROR: we don't have a term yet [" + token + "]"
+               print >>sys.stderr, str(features)
             i += 1
       #print features
       label = features[len(features)-1]
@@ -358,11 +360,11 @@ def addSomeFeatures( suite, ftypes ):
 
    suite = suite.strip()
    fvs = suite.split("\n")
+   print >>sys.stderr, "adding features"
    for i in range(len(fvs)):
-      print "adding features to token " + str(i)
       fvs[i] = fvs[i].strip()
       if fvs[i] == '':
-         print "warning we have an empty FV"
+         print >>sys.stderr, "warning we have an empty FV"
          continue
       features = re.split('\\s', fvs[i])
       token = features[1]
@@ -397,12 +399,13 @@ def addSomeFeatures( suite, ftypes ):
 
    features = "\n".join(fvs) #remake the string from the fvs
    features = features.strip()
+   features += "\n";
    return features
 
 def addSomeFeaturesMallet( mallet, ftypes ):
    """Generates dictionary, history , and regular expression based features for input."""
 
-   print str(ftypes)
+   print >>sys.stderr, str(ftypes)
    history = []
    historySize = 4
 
@@ -411,7 +414,7 @@ def addSomeFeaturesMallet( mallet, ftypes ):
    for i in range(len(fvs)):
       fvs[i] = fvs[i].strip()
       if fvs[i] == '':
-         print "warning we have an empty FV"
+         print >>sys.stderr, "warning we have an empty FV"
          continue
       features = re.split('\\s', fvs[i])
       token = features[len(features)-2]
@@ -587,7 +590,7 @@ def trainModel( modelfile, mallet ):
    tempfile.close()
 
    #instead of using MALLET we can use CRFSuite.
-   execme = "crfsuite learn -m " + modelfile + " " + tempfile.name + " 2>&1 >" + modelfile + ".log"
+   execme = CRFSUITEBIN + " learn -m " + modelfile + " " + tempfile.name + " 2>&1 >" + modelfile + ".log"
 
 #   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
 #   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
@@ -625,7 +628,7 @@ def testModel (outfile, modelfile, mallet ):
    print >> sys.stderr, "done writing results";
    currtime = time.time()
    passedtime = currtime - prevtime
-   print "elapsed test time = " + str(passedtime)
+   print  >> sys.stderr, "elapsed test time = " + str(passedtime)
 
    return results
    
@@ -641,7 +644,7 @@ def labelMallet( modelfile, mallet ):
 #   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
 #   execme = 'java ' + javaargs + " EmoryCRF --model-file " + modelfile + " " + tempfile.name
 
-   execme = "crfsuite tag -m " + modelfile + " " + tempfile.name
+   execme = CRFSUITEBIN + " tag -m " + modelfile + " " + tempfile.name
 
    print >> sys.stderr, "executing " + execme
 
@@ -657,6 +660,7 @@ def labelMallet( modelfile, mallet ):
    print >> sys.stderr, "waiting on response"
    resultlabels = stdout_value
    print >> sys.stderr, "got response"
+   #print >> sys.stderr, stderr_value
    #delete the created tempfile
    print >> sys.stderr, "unlinking file"
 
@@ -678,7 +682,7 @@ def labelMallet( modelfile, mallet ):
       l = labels[i]
       resultsmallet += r + "\t" + l + "\n"
 
-   print "returning results"
+   print >> sys.stderr, "returning results"
    return resultsmallet
 
 def getCRFNamesFromDir( dir ):

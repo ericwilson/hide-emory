@@ -714,20 +714,35 @@ def anondoc(request,id):
       }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
+def trainblank(request):
+   return train(request, '')
+
    
 def train(request,tag):
-   objects = db.view('tags/tags')
    trainset = dict()
-   for obj in objects:
-      if obj['key'] == tag:
-         obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
-         trainset[obj['id']] = obj
-   count = len(trainset) 
+   count = 0
+
+   message = ''
+   if ( tag == '' ):
+      message = "Please select a set to label from the left"
+   else:
+      objects = db.view('tags/tags')
+      for obj in objects:
+         if obj['key'] == tag:
+            obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
+            trainset[obj['id']] = obj
+      count = len(trainset) 
    
+   tags = getalltags(db)
+   models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
+
    context = {
+      'message': message,
       'objects':trainset,
-      'tags': tag,
-      'count': count
+      'tags': tags,
+      'count': count,
+      'path': 'train',
+      'models': models,
    }
    
    if ( request.method == "POST" ):

@@ -4,25 +4,51 @@
 {% block htmlhead %}
 {{block.super}}
 <style type="text/css" media="screen">
+#filelist ul{
+   list-style: none;
+   margin: 0px;
+   padding: 0px;
+}
 #filelist {
+   position: absolute;
 	background-color: white;
-        padding: 10px;
+   padding: 5px;
+   top: 40px;
+   margin: 0px;
         /*width: 800px;*/
         /*line-height: 200%;*/
         /*margin-right: 100px;*/
-        border: 5px solid #ccc;
+   border: 1px solid #ccc;
 /*	width: 90%; */
-        margin-left: 10px;
-        margin-right: 10px;
+/*   width: 100px; */
+    margin-left: 10px;
 }
 
 #anon1 {
 	margin-left: auto;
 	margin-right: auto;
 }
+
+#reportlist{
+   position: absolute;
+   padding: 5px;
+   border: 1px solid #ccc;
+   background-color: white;
+   position:absolute;
+   margin-left: 200px;
+   top: 40px;
+   width: 800px;
+}
 </style>
 
 
+
+<script language="javascript" type="text/javascript">
+function submitCRFForm(action){
+document.crfform.crf.value = action
+document.crfform.submit();
+}
+</script>
 
 <script type="text/javascript">
 function submitform()
@@ -51,7 +77,6 @@ function submitwritetrain()
 <link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/ui.jqgrid.css" />
 
 
-
 <script type="text/javascript">
 jQuery(document).ready(function(){ 
 
@@ -60,8 +85,8 @@ jQuery("#anon1").jqGrid({
                         height: 'auto', 
                         colNames:['Title', 'Tags', 'Labels'], 
                         colModel:[ 
-                                        {name:'title',index:'title'}, 
-                                        {name:'tags',index:'tags'}, 
+                                        {name:'title',index:'title', width: '75px'}, 
+                                        {name:'tags',index:'tags', width: '100px'}, 
                                         {name:'labels',index:'labels'}, 
 					
                                 ], 
@@ -89,21 +114,61 @@ for(var i=0;i<=mydata.length;i++) {
 HIDE: Label Documents
 {% endblock %}
 
+
+
 {% block content %}
+
+<div id="taskbar">
+<ul class="dropdown">
+<li class="dir"><a href="/hide/autolabelset/{{row.id}}">Label</a> 
+<!-- insert crf list here
+-->
+<ul class="smaller">
+<form name="crfform" action="/hide/autolabelset/{{row.id}}" method="POST">
+{% csrf_token %}
+<input type="hidden" name="crf"/>
+{% for crf in models %}
+<li><a href="javascript:submitCRFForm('{{crf}}');">{{ crf }}</a></li>
+{% endfor %}
+</form>
+</ul>
+</li>
+<li><a href="javascript: submitform()">Train</a></li>
+<li><a href="/hide/deidentify/{{row.id}}">De-Identify</a></li>
+<li>
+<a href="javascript: submitwritetrain()">Save</a> 
+</li>
+<li><a href="./">  Help  </a></li>
+</ul>
+</div>
+
+<div id="filelist">
+<ul>
+  {% for tag in tags %} 
+  <li><a href="/hide/{{path}}/{{tag}}">{{ tag }}</a></li>
+  {% endfor %}
+</ul>
+</div>
+
 {% comment %}
 <h1>HIDE</h1>
 {% endcomment %}
+<div id="reportlist">
+{% if message %}
+<h2>{{message}}</h2>
+{% else %}
 <h2>Label the documents below</h2>
 <h2>You may train the AutoLabeler when finished</h2>
 <form name="myform" method="post" action="#">
 {% csrf_token %}
+{% comment %}
 <a href="javascript: submitform()">Train AutoLabeler</a> <br/>
 <a href="javascript: submitwritetrain()">Write Set to Disk</a> 
-{{ relist }}
+{% endcomment %}
 </form>
-<div id="filelist">
 
 <table id="anon1"></table>
+{% endif %}
   
   
 </div>
