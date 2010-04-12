@@ -6,143 +6,6 @@
 <link rel="stylesheet" href="/site_media/screen.css" type="text/css" media="screen" charset="utf-8">
 <style type="text/css" media="screen">
 
-.dropdown {
-/*background-color: #0044AA;*/
-/*font-size:1.7em;*/
-list-style: none;
-margin: 0px;
-padding:0px;
-}
-
-
-
-ul.dropdown,
-ul.dropdown li,
-ul.dropdown ul {
-/* color: #3D8EB6; */
- list-style: none;
- margin: 0;
- padding: 0;
-}
-
-ul.dropdown {
- position: relative;
- z-index: 597;
- float: left;
-}
-
-ul.dropdown li {
- float: left;
- line-height: 1.3em;
- vertical-align: middle;
- zoom: 1;
-}
-
-   ul.dropdown li.hover,
-   ul.dropdown li:hover {
-     position: relative;
- z-index: 599;
- cursor: default;
-   }
-
-   ul.dropdown a:link,a:visited, a:hover, a:active {
-      /*color: #3D8EB6; */
-      text-decoration: none;
-   }
-
-
-   /* -- level mark -- */
-   
-
-
-   ul.dropdown ul {
-    width: 150px;
-    margin-top: 1px;
-     visibility: hidden;
- position: absolute;
-/* top: 100%; */
-/* left: -20px; */
- z-index: 598;
-
-   }
-
-      ul.dropdown ul li {
-       font-weight: normal;
-        float: none;
-      }
-
-
-ul.dropdown li,
-ul.dropdown ul {
- list-style: none;
- margin: 0;
- padding: 0;
-/* z-index:1000;*/
-}
-
-
-
-ul.dropdown li {
- float: left;
- /*line-height: 1.3em;*/
- vertical-align: middle;
- zoom: 1;
- padding:3px 3px;
-}
-
-ul.dropdown li.hover,
-ul.dropdown li:hover {
- position: relative;
- z-index: 599;
- cursor: default;
- background-color: #cccccc;
-}
-
-ul.dropdown ul {
- visibility: hidden;
- position: absolute;
-/*  top: 100%;
- left: -20px;
-z-index: 598;*/
- width: 166px;
- border: 1px solid #3D8EB6;
- background-color:#FFFFFF;
- opacity: 0.9;
-filter: Alpha(Opacity=90);
-}
-
-ul.dropdown ul li {
- float: none;
- padding:0px 10px;
- border-bottom:1px solid #D0E4B9;
- border-left:1px solid #D0E4B9;
- border-right:1px solid #D0E4B9;
-}
-
-ul.dropdown ul ul {
- top: 1px;
- left: 99%;
-}
-
-ul.dropdown li:hover > ul {
- visibility: visible;
-}
-
-
-
-
-
-ul.dropdown li.rtl ul {
- top: 100%;
- right: 0;
- left: auto;
-}
-
-ul.dropdown li.rtl ul ul {
- top: 1px;
- right: 99%;
- left: auto;
-}
 
 #capture pre{
    font-size:0.9em;
@@ -158,7 +21,7 @@ ul.dropdown li.rtl ul ul {
 #edit {
    padding: 3px;
    position: relative;
-   top: 35px;
+   top: 40px;
 	width: 800px;
    margin-left: 125px;
 	margin-right: auto;
@@ -188,13 +51,6 @@ ul.dropdown li.rtl ul ul {
    padding-bottom: 2px;
 }
 
-#taskbar {
-   position: absolute;
-   left: 5px;
-   top: 0px;
-	background-color:#ffffff;
-   border: 1px solid #6688aa;
-}
 
 #leftbar {
 	position: absolute;
@@ -210,7 +66,7 @@ ul.dropdown li.rtl ul ul {
 	position: absolute; 
    width: 100px;
 	left: 5px;
-	top: 35px; 
+	top: 40px; 
 	border: 1px solid #6688aa; 
 	background-color: white; 
 	text-align: center;
@@ -220,6 +76,7 @@ ul.dropdown li.rtl ul ul {
 #sidebar h2 {
    padding-bottom: 4px;
    border-bottom:1px solid #6688aa;
+   font-size: 1.1em;
 }
 
 #error {
@@ -453,13 +310,10 @@ function sendnormal(f) {
 
 <div id="taskbar">
 <ul class="dropdown">
-<li>
-Tasks:
-</li>
-<li class="dir"><a href="/hide/autolabel/{{row.id}}">AutoLabel</a> |
+<li class="dir"><a href="/hide/autolabel/{{row.id}}">Label</a> 
 <!-- insert crf list here
 -->
-<ul>
+<ul class="smaller">
 <form name="crfform" action="/hide/autolabel/{{row.id}}" method="POST">
 {% csrf_token %}
 <input type="hidden" name="crf"/>
@@ -469,13 +323,13 @@ Tasks:
 </form>
 </ul>
 </li>
-<li><a href="/hide/deidentify/{{row.id}}">De-Identify</a> | </li>
+<li><a href="/hide/deidentify/{{row.id}}">De-Identify</a></li>
 <li>
 <form id="tagform" method="post" action="/hide/doc/{{row.id}}/" >
 {% csrf_token %}
 <input id="newtags" style="display:none" name="newtags"/>
 <input id="tagtext" style="display:none" name="tagtext" />
-<a href="javascript:{}" onclick="sendnormal(this);">Save</a> |
+<a href="javascript:{}" onclick="sendnormal(this);">Save</a> 
 </form>
 </li>
 <li><a href="./">  Help  </a></li>
