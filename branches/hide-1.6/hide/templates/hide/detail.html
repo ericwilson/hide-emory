@@ -6,8 +6,147 @@
 <link rel="stylesheet" href="/site_media/screen.css" type="text/css" media="screen" charset="utf-8">
 <style type="text/css" media="screen">
 
+.dropdown {
+/*background-color: #0044AA;*/
+/*font-size:1.7em;*/
+list-style: none;
+margin: 0px;
+padding:0px;
+}
+
+
+
+ul.dropdown,
+ul.dropdown li,
+ul.dropdown ul {
+/* color: #3D8EB6; */
+ list-style: none;
+ margin: 0;
+ padding: 0;
+}
+
+ul.dropdown {
+ position: relative;
+ z-index: 597;
+ float: left;
+}
+
+ul.dropdown li {
+ float: left;
+ line-height: 1.3em;
+ vertical-align: middle;
+ zoom: 1;
+}
+
+   ul.dropdown li.hover,
+   ul.dropdown li:hover {
+     position: relative;
+ z-index: 599;
+ cursor: default;
+   }
+
+   ul.dropdown a:link,a:visited, a:hover, a:active {
+      /*color: #3D8EB6; */
+      text-decoration: none;
+   }
+
+
+   /* -- level mark -- */
+   
+
+
+   ul.dropdown ul {
+    width: 150px;
+    margin-top: 1px;
+     visibility: hidden;
+ position: absolute;
+/* top: 100%; */
+/* left: -20px; */
+ z-index: 598;
+
+   }
+
+      ul.dropdown ul li {
+       font-weight: normal;
+        float: none;
+      }
+
+
+ul.dropdown li,
+ul.dropdown ul {
+ list-style: none;
+ margin: 0;
+ padding: 0;
+/* z-index:1000;*/
+}
+
+
+
+ul.dropdown li {
+ float: left;
+ /*line-height: 1.3em;*/
+ vertical-align: middle;
+ zoom: 1;
+ padding:3px 3px;
+}
+
+ul.dropdown li.hover,
+ul.dropdown li:hover {
+ position: relative;
+ z-index: 599;
+ cursor: default;
+ background-color: #cccccc;
+}
+
+ul.dropdown ul {
+ visibility: hidden;
+ position: absolute;
+/*  top: 100%;
+ left: -20px;
+z-index: 598;*/
+ width: 166px;
+ border: 1px solid #3D8EB6;
+ background-color:#FFFFFF;
+ opacity: 0.9;
+filter: Alpha(Opacity=90);
+}
+
+ul.dropdown ul li {
+ float: none;
+ padding:0px 10px;
+ border-bottom:1px solid #D0E4B9;
+ border-left:1px solid #D0E4B9;
+ border-right:1px solid #D0E4B9;
+}
+
+ul.dropdown ul ul {
+ top: 1px;
+ left: 99%;
+}
+
+ul.dropdown li:hover > ul {
+ visibility: visible;
+}
+
+
+
+
+
+ul.dropdown li.rtl ul {
+ top: 100%;
+ right: 0;
+ left: auto;
+}
+
+ul.dropdown li.rtl ul ul {
+ top: 1px;
+ right: 99%;
+ left: auto;
+}
+
 #capture pre{
-   font-size:0.8em;
+   font-size:0.9em;
+   white-space: pre-wrap;
 }
 
 #removes {
@@ -16,37 +155,53 @@
 	margin: 0;
 }
 
-#logo_title {
-	color: grey;
-}
-
 #edit {
-	width: 50%;
-	margin-left: auto;
+   padding: 3px;
+   position: relative;
+   top: 35px;
+	width: 800px;
+   margin-left: 125px;
 	margin-right: auto;
 	background-color:#EEEEEE;
-	border: 2px solid #6688aa; 
-	text-align: center;
+	border: 1px solid #6688aa; 
+   padding 0;
+}
+
+#edit input{
+   float: right;
+   width: 750px;
 }
 
 #capture {
-	position: absolute;
-	top: 40px;
-	line-height: 250%;
+	position: relative;
+   top: 50px;
+	line-height: 200%;
 	left: 125px;
-/*   right: 5px; */
-	border: 5px solid #6688aa; 
+   right: 5px; 
+	border: 1px solid #6688aa; 
 	background-color: white;
    margin-right: 10px;
    margin-bottom: 10px;
+   width: 800px; 
+   padding-left: 2px;
+   padding-right: 2px;
+   padding-bottom: 2px;
+}
+
+#taskbar {
+   position: absolute;
+   left: 5px;
+   top: 0px;
+	background-color:#ffffff;
+   border: 1px solid #6688aa;
 }
 
 #leftbar {
 	position: absolute;
    width: 100px;
 	left: 5px;
-	top: 10px;
-	border: 2px solid #6688aa;
+	top: 0px; 
+	border: 1px solid #6688aa;
 	background-color:white;
 	text-align: center;
 }
@@ -55,11 +210,18 @@
 	position: absolute; 
    width: 100px;
 	left: 5px;
-	top: 100px;
-	border: 2px solid #6688aa; 
+	top: 35px; 
+	border: 1px solid #6688aa; 
 	background-color: white; 
 	text-align: center;
+   padding: 3px;
 }
+
+#sidebar h2 {
+   padding-bottom: 4px;
+   border-bottom:1px solid #6688aa;
+}
+
 #error {
 	position: fixed;
 	top: 95%;
@@ -75,12 +237,12 @@
 	z-index: 100;
 }
 #links a {
-	font-size: 1.5em;
+	font-size: 1em;
 	width: 100%;
 	border: 1px solid #aaa;
 	color: black;
 	display: block;
-	padding: 6px 10px;
+	padding: 2px 4px;
 	margin: 0;
 }
 .hov {
@@ -93,12 +255,24 @@
 }
 .legend {
 	text-align: center;
+   margin-bottom: 2px;
 }
 
 </style>
 
 <script type="text/javascript" src="/site_media/jquery.js"></script>
+
+<script language="javascript" type="text/javascript">
+function submitCRFForm(action){
+document.crfform.crf.value = action
+document.crfform.submit();
+}
+</script>
+
+
 <script type="text/javascript">
+
+
 
 
 {% autoescape off %}
@@ -153,7 +327,7 @@ function create_link(name) {
 }
 
 function add_to_legend(name, color) {
-	legend = $("<p></p>");
+	legend = $("<div></div>");
 	legend.html(name);
 	legend.addClass('legend');
 	legend.addClass(name);
@@ -273,16 +447,61 @@ function sendnormal(f) {
 </script>
 {% endblock %}
 
-{% block title %}HIDE v1.5: {{ row.title }}{% endblock %}
+{% block title %}HIDE: {{ row.title }}{% endblock %}
 
 {% block content %}
 
+<div id="taskbar">
+<ul class="dropdown">
+<li>
+Tasks:
+</li>
+<li class="dir"><a href="/hide/autolabel/{{row.id}}">AutoLabel</a> |
+<!-- insert crf list here
+-->
+<ul>
+<form name="crfform" action="/hide/autolabel/{{row.id}}" method="POST">
+{% csrf_token %}
+<input type="hidden" name="crf"/>
+{% for crf in models %}
+<li><a href="javascript:submitCRFForm('{{crf}}');">{{ crf }}</a></li>
+{% endfor %}
+</form>
+</ul>
+</li>
+<li><a href="/hide/deidentify/{{row.id}}">De-Identify</a> | </li>
+<li>
+<form id="tagform" method="post" action="/hide/doc/{{row.id}}/" >
+{% csrf_token %}
+<input id="newtags" style="display:none" name="newtags"/>
+<input id="tagtext" style="display:none" name="tagtext" />
+<a href="javascript:{}" onclick="sendnormal(this);">Save</a> |
+</form>
+</li>
+<li><a href="./">  Help  </a></li>
+</ul>
+</div>
+
+<!--
 <div id="leftbar">
 <h2>Tasks</h2>
 	<a href="/hide/deidentify/{{row.id}}">De-Identify</a><br/>
 	<a href="/hide/autolabel/{{row.id}}">AutoLabel</a>
+<form id="tagform" method="post" action="/hide/doc/{{row.id}}/" >
+{% csrf_token %}
+<input id="newtags" style="display:none" name="newtags"/>
+<input id="tagtext" style="display:none" name="tagtext" />
+<a href="javascript:{}" onclick="sendnormal(this);">Save</a>
+</form>
 </div>
+-->
 
+<div id="edit">
+<b>Tags:</b>
+{% autoescape off %}
+<input id="tags" type="text" name="tags"  value="{{ row.tags }}">
+{% endautoescape %}
+</div>
 
 <div id="capture">
 {% autoescape off %}
@@ -290,24 +509,12 @@ function sendnormal(f) {
 {% endautoescape %}
 </div>
 
-<form id="tagform" method="post" action="/hide/doc/{{row.id}}/" >
 <div id="sidebar">
 <div id="legend">
 <h2>Legend</h2>
 </div>
-{% csrf_token %}
-<input id="newtags" style="display:none" name="newtags"/>
-<input id="tagtext" style="display:none" name="tagtext" />
-<a href="javascript:{}" onclick="sendnormal(this);">Save</a>
-</form>
 </div>
 
-<div id="edit">
-<b>Tags: </b>
-{% autoescape off %}
-<input id="tags" type="text" name="tags" style="width: 90%;"  value="{{ row.tags }}">
-{% endautoescape %}
-</div>
 
 <div id="error"></div>
 <div id="links"></div>
