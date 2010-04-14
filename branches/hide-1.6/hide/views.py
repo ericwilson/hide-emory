@@ -26,6 +26,7 @@ import xmlprinter
 import StringIO
 import xml.sax.saxutils
 import shutil
+from models import Object
 
 import tasks
 
@@ -667,7 +668,7 @@ def detail(request,id):
    if not request.user.is_authenticated():
       return HttpResponseRedirect(u"/accounts/login/?next=%s" % request.path)
    try:
-      doc = db[id]
+      doc = db.get(id)
    except ResourceNotFound:
       raise Http404        
    if request.method =="POST":
@@ -680,8 +681,10 @@ def detail(request,id):
 
       doc['text'] = tagtext
       doc['tags'] = request.POST['newtags']
-   db[id] = doc
+      db.save_doc(doc)
    doc['id'] = id
+#      db[id] = doc #save the document to the db.
+#      doc['id'] = id
 #   tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
    LEGEND = getLegendSpec( getTagsDict(doc['text']) )
    models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
@@ -726,8 +729,9 @@ def train(request,tag):
    if ( tag == '' ):
       message = "Please select a set to label from the left"
    else:
-      objects = db.view('tags/tags')
+      objects = db.view('tags/tags', keys=[tag])
       for obj in objects:
+         print "looking at " + str(obj)
          if obj['key'] == tag:
             obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
             trainset[obj['id']] = obj
