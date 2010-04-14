@@ -364,7 +364,8 @@ def XMLifyContent ( content ):
       if m:
          newtext += tokens[i]  #start tag
          i += 3
-         newtext += xml.sax.saxutils.escape(tokens[i]) #text
+         if ( tokens[i] ):
+            newtext += xml.sax.saxutils.escape(tokens[i]) #text
          i += 1
          newtext += tokens[i] #end tag
       else: 
@@ -594,7 +595,7 @@ def evaluate( request ):
          html = HIDEexperiment.calcAccuracyHTML(results)
          print "done calculating accuracy"
          context = {'accuracy':html}
-	 return render_to_response('hide/accuracy.html', context, context_instance=RequestContext(request))
+         return render_to_response('hide/accuracy.html', context, context_instance=RequestContext(request))
       else:
          error = "the training and testing sets aren't specified."
          context = {'error':error}
