@@ -126,7 +126,6 @@ def replaceTags( nodelist, parent, repl, replvals ):
              #print "replacing " + subnode.nodeValue + " with " + repl[tagname]
              replvals[parent.tagName] = subnode.nodeValue
              subnode.nodeValue = repl[tagname]
-				
 
 def doReplacement( sgml, repl, replvals ):
    #TODO - consider using a non-validating SAX parser for this
@@ -137,8 +136,7 @@ def doReplacement( sgml, repl, replvals ):
    xmlstring = dom.toxml()
    val = xmlstring.replace("<?xml version=\"1.0\" ?>","")
    return val
-	
-        	
+
 def SGMLToMallet ( sgml ):
    xhtml, errors = tidy_document( "<pre>" + sgml + "</pre>",
       options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
@@ -151,16 +149,13 @@ def SGMLToMallet ( sgml ):
    xhtml = '<report>' + xhtml + '</report>'
    parser = make_parser()
    curHandler = SGMLToMalletHandler()
-   #parser.setContentHandler(curHandler)
    xml.sax.parseString(xhtml, curHandler)
    mallet = curHandler.mallet
-#   print "mallet " + mallet
    return mallet
 
 def SGMLToSuite ( sgml ):
    xhtml, errors = tidy_document( "<pre>" + sgml + "</pre>",
       options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-#   print "tidy = " + xhtml 
    #pull everything between pre tags
    spre = re.compile('^<pre>', re.I)
    epre = re.compile('</pre>$', re.I)
@@ -169,24 +164,9 @@ def SGMLToSuite ( sgml ):
    xhtml = '<report>' + xhtml + '</report>'
    parser = make_parser()
    curHandler = SGMLToSuiteHandler()
-   #parser.setContentHandler(curHandler)
    xml.sax.parseString(xhtml, curHandler)
    mallet = curHandler.mallet
-#   print "mallet " + mallet
    return mallet
-#path= HIDELIB + "sgml2mallet-stdin.pl"
-#print >> sys.stderr, "[" + path + "]"
-#add features to the mallet file
-#proc = subprocess.Popen("perl " + path,
-#		shell=True,
-#		stdin=subprocess.PIPE,
-#		stdout=subprocess.PIPE,
-#		stderr=subprocess.PIPE,
-#		)
-#stdout_value, stderr_value = proc.communicate(str(sgml))
-#print str(stderr_value)
-#print "SGMLToMallet RETURNING " + stdout_value
-#return stdout_value
 
 def MalletToSuite ( mallet ):
    fvs = re.split('\n', mallet)
@@ -246,7 +226,7 @@ def MalletToSGML ( mallet ):
       sgml += term
 
    return sgml
-	
+
 def FeaturesToSGML ( mallet ):
    sgml = ''
    #print "mallet = " + mallet
@@ -294,56 +274,52 @@ def FeaturesToSGML ( mallet ):
       sgml += term
 
    return sgml
-	
+
 def extractTags( sgml, tagstoa ):
-	#extract tags extracts the values between the tags in a document
-	# in the case of numeric attributes it returns the value
-	# string attributes are converted to a numeric value
-	# depending on the tag.
-#	print "Extracting ",
-#	print tagstoa
-#	print " from " + sgml
-	dom = xml.dom.minidom.parseString(sgml)
-	extract = []
-	for tag in tagstoa:
-		#print "extracting " + tag
-		foundtags = dom.getElementsByTagName(tag)
-		if ( foundtags.length > 0 ):
-			t = foundtags[0]
-			value = str(t.childNodes[0].nodeValue)
-			if t.nodeName == 'gender':
-				if ( value == 'F' or value == 'f' ):
-					value = "0"
-				elif ( value == 'M' or value == 'm'):
-					value = "1"
-			#print "found " + tag + " = " + value
-			extract.append(value)
-	output = "\t".join(map( str, extract))
-	#print output
-	return output 
+#extract tags extracts the values between the tags in a document
+# in the case of numeric attributes it returns the value
+# string attributes are converted to a numeric value
+# depending on the tag.
+   dom = xml.dom.minidom.parseString(sgml)
+   extract = []
+   for tag in tagstoa:
+      #print "extracting " + tag
+      foundtags = dom.getElementsByTagName(tag)
+      if ( foundtags.length > 0 ):
+         t = foundtags[0]
+         value = str(t.childNodes[0].nodeValue)
+         if t.nodeName == 'gender':
+            if ( value == 'F' or value == 'f' ):
+               value = "0"
+            elif ( value == 'M' or value == 'm'):
+               value = "1"
+         #print "found " + tag + " = " + value
+         extract.append(value)
+   output = "\t".join(map( str, extract))
+   #print output
+   return output 
 
 def buildTemplate( sgml, tagstoa ):
-	#this function builds a unique ID for every sgml match of any of the tags
-	#specified in the argument
-	# the mapping is an integer value combined with the tagname 
-	#corresponding to each occurrence of
-	occurrences = dict()
-	dom = xml.dom.minidom.parseString(sgml)
-	extract = []
-	foundtags = dom.getElementsByTagName(tag)
-	for tag in tagstoa:
-		if ( foundtags.length > 0 ):
-			for t in foundtags:
-				value = str(t.childNodes[0].nodeValue)
-				if t.nodeName == 'gender':
-					if ( value == 'F' or value == 'f' ):
-						value = "0"
-					elif ( value == 'M' or value == 'm'):
-						value = "1"
-				
-				#print "found " + tag + " = " + value
-				extract.append(value)
-
+   #this function builds a unique ID for every sgml match of any of the tags
+   #specified in the argument
+   # the mapping is an integer value combined with the tagname 
+   #corresponding to each occurrence of
+   occurrences = dict()
+   dom = xml.dom.minidom.parseString(sgml)
+   extract = []
+   foundtags = dom.getElementsByTagName(tag)
+   for tag in tagstoa:
+      if ( foundtags.length > 0 ):
+         for t in foundtags:
+            value = str(t.childNodes[0].nodeValue)
+            if t.nodeName == 'gender':
+               if ( value == 'F' or value == 'f' ):
+                  value = "0"
+               elif ( value == 'M' or value == 'm'):
+                  value = "1"
+            
+            #print "found " + tag + " = " + value
+            extract.append(value)
 
 #addFeatures calls addSomeFeatures with all features as argument
 def addFeatures( features ):
