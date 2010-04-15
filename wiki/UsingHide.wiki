@@ -12,11 +12,11 @@ HIDE will import data that follows the same XML schema as the example below:
 <reports>
 <report>
 <title>document 1 title</title>
-<content>This is the content of document 1 and it can <tagname>include</tagname> tags</content>
+<content>This is the content of document 1 and it can <labelname>include</labelname> well-formed xml</content>
 </report>
 <report>
 <title>document 2 title</title>
-<content>This is the content of document 2 and it can <tagname>include</tagname> tags</content>
+<content>This is the content of document 2 and it can <labelname>include</labelname> well-formed xml</content>
 </report>
 </reports>
 }}}
