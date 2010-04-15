@@ -3,7 +3,7 @@
 ==Loading Data==
 
 The first step to using the HIDE system is to load reports into the database. HIDE accepts a variety of import formats including
-xml, i2b2 XML, PhysioNet-deid format, and copy-and-paste.
+xml, i2b2 XML, !PhysioNet-deid format, and copy-and-paste.
 
 ===XML===
 HIDE will import data that follows the same XML schema as the example below:
@@ -28,7 +28,7 @@ HIDE can import the XML files that can be obtained from the i2b2 challenge: http
 
 Note: The released xml from i2b2 has an error in it. This must first be fixed before importing the data into HIDE.
 
-===PhysioNet-DEID format===
+===!PhysioNet-DEID format===
 HIDE can import the text files from: http://www.physionet.org/physiotools/deid/ and assign tags to all the documents imported
 
 ===Copy-and-Paste===
