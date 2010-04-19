@@ -544,6 +544,47 @@ def delete(request,id):
     return HttpResponseRedirect(u"/hide/")
 
 @login_required(redirect_field_name='next')
+def deidentifyset( request, tag ):
+   if request.method == 'POST' or request.method == 'GET':
+      try:
+         print "De-identifying set " + tag 
+         objects = db.view('tags/tags', keys=[tag])
+         for obj in objects:
+#           print "about to label " + str(obj)
+            html = '<pre>' + obj['value']['text'] + '</pre>'
+            repl = dict()
+            print "Replacing " + str(REPLACEMENTS)
+            print "title = " + obj['value']['title']
+            clean, errors = tidy_document( html,
+               options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
+            f =open('/tmp/set.xml', 'w')
+            f.write( "<dontuseme>" + html + "</dontuseme>" )
+            f.close()
+            deid = doReplacement( clean, REPLACEMENTS, repl )
+            print "replaced " + str(repl)
+            xhtml = deid
+            spre = re.compile('<pre>', re.I)
+            epre = re.compile('</pre>', re.I)
+            xhtml = re.sub(spre, '', xhtml)
+            xhtml = re.sub(epre, '', xhtml)
+
+            doc = dict()
+            doc['text'] = xhtml 
+            doc['tags'] = tag + '-deid'
+            doc['title'] = obj['value']['title']
+            print "saving " + doc['title'] + ' ' + doc['tags']
+            db.save_doc(doc)
+         return HttpResponseRedirect( '/hide/train/' + tag + '-deid' )
+      except:  
+         error = str(sys.exc_info())
+         print error
+         return errorpage( request, error )
+   else:
+      return HttpResponseRedirect( '/hide/train/' + tag )
+#      request.method = 'GET';
+#      return train(request, tag)
+
+@login_required(redirect_field_name='next')
 def deidentify( request, id ):
     try:
        doc = db[id]
@@ -555,7 +596,6 @@ def deidentify( request, id ):
     repl = dict()
     print "Replacing " + str(REPLACEMENTS)
     deid = doReplacement( "<dontuseme>" + html + "</dontuseme>", REPLACEMENTS, repl )
-
     print "replaced " + str(repl)
     xhtml = deid
     spre = re.compile('<dontuseme>', re.I)
