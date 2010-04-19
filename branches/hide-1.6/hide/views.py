@@ -40,25 +40,28 @@ from JSAXParser import i2b2XMLHandler
 
 
 #first thing is to initialize the HIDE module from the config file
-log = loadConfig(getattr(settings,'HIDECONFIG', 'default'))
+log = ''
+try:
+   log = loadConfig(getattr(settings,'HIDECONFIG', 'default'))
+   HIDELIB = HIDE.HIDELIB
+   EMORYCRFLIB = HIDE.EMORYCRFLIB # getattr(settings, 'EMORYCRFLIB', '/tmp/')
+   CRFMODELDIR = HIDE.CRFMODELDIR # getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
+   if not os.path.isdir(CRFMODELDIR):
+      os.mkdir( CRFMODELDIR )
 
-HIDELIB = HIDE.HIDELIB
-EMORYCRFLIB = HIDE.EMORYCRFLIB # getattr(settings, 'EMORYCRFLIB', '/tmp/')
-CRFMODELDIR = HIDE.CRFMODELDIR # getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
-if not os.path.isdir(CRFMODELDIR):
-   os.mkdir( CRFMODELDIR )
+   SERVER = Server(getattr(settings,'COUCHDB_SERVER','http://127.0.0.1:5984'))
+   COUCHUSER = getattr(settings, 'COUCHDB_USER', 'none')
+   if ( COUCHUSER != "none" ):
+      COUCHPASSWD = getattr(settings, 'COUCHDB_PASS', 'none')
+      SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
 
-SERVER = Server(getattr(settings,'COUCHDB_SERVER','http://127.0.0.1:5984'))
-COUCHUSER = getattr(settings, 'COUCHDB_USER', 'none')
-if ( COUCHUSER != "none" ):
-   COUCHPASSWD = getattr(settings, 'COUCHDB_PASS', 'none')
-   SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
-
-REPLACEMENTS = getReplacements()
-LEGEND = dict()
-
-print REPLACEMENTS
-print log
+   REPLACEMENTS = getReplacements()
+   LEGEND = dict()
+   print REPLACEMENTS
+   print log
+except:
+   print "Error initializing HIDE, there is probably something wrong with the configuration file at " + log
+   print sys.exc_info()
 
 try:
    db = SERVER.get_or_create_db('hide_objects')
@@ -374,7 +377,9 @@ def XMLifyContent ( content ):
    return newtext
 
 def buildXMLFromList( objects ):
+ try:
    print "Building xml"
+#   raise Exception("Blah")
    fp = StringIO.StringIO()
    writer = xmlprinter.xmlprinter(fp)
    writer.startDocument()
@@ -406,6 +411,10 @@ def buildXMLFromList( objects ):
    reportXML = fp.getvalue()
    print "sending content =\n" + reportXML
    return reportXML 
+ except:
+   print "**** Warning **** Error building xml from list of objects"
+   return "**** Warning **** Error building xml from list of objects" , sys.exc_info()
+
 
 #this function handles an uploaded xml file. The xml should be of the form
 #<records>
@@ -1023,3 +1032,9 @@ def randomReport( request ):
    }
 
    return render_to_response('hide/report.html', context, context_instance=RequestContext(request))
+
+def editsettings( request ):
+   hideconfigfilepath = getattr(settings,'HIDECONFIG', 'default')
+   context = { 'filepath' : hideconfigfilepath }
+   return render_to_response('hide/settings.html', context, context_instance=RequestContext(request))
+
