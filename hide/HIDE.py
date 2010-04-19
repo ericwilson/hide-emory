@@ -143,6 +143,7 @@ def doReplacement( sgml, repl, replvals ):
    return val
 
 def SGMLToMallet ( sgml ):
+ try:
    xhtml, errors = tidy_document( "<pre>" + sgml + "</pre>",
       options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
 #   print "tidy = " + xhtml 
@@ -157,8 +158,12 @@ def SGMLToMallet ( sgml ):
    xml.sax.parseString(xhtml, curHandler)
    mallet = curHandler.mallet
    return mallet
+ except:
+   print sys.exc_info()
+   raise
 
 def SGMLToSuite ( sgml ):
+ try:
    xhtml, errors = tidy_document( "<pre>" + sgml + "</pre>",
       options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
    #pull everything between pre tags
@@ -172,6 +177,9 @@ def SGMLToSuite ( sgml ):
    xml.sax.parseString(xhtml, curHandler)
    mallet = curHandler.mallet
    return mallet
+ except:
+   print sys.exc_info()
+   raise
 
 def MalletToSuite ( mallet ):
    fvs = re.split('\n', mallet)

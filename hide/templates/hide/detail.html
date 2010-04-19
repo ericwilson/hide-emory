@@ -200,6 +200,14 @@ function set_bindings() {
 	});
 };
 
+function delete_all_labels() {
+   removes = $('#removes div')
+   removes.each( function(index) {
+//      alert(index + ' : ' + this);
+      $(this).trigger('click');
+   });
+}
+
 function delete_link(tag, name) {
 	tag = $(tag);
 	link = $("<div></div>");
@@ -311,12 +319,11 @@ function sendnormal(f) {
 <div id="taskbar">
 <ul class="dropdown">
 <li class="dir"><a href="/hide/autolabel/{{row.id}}">Label</a> 
-<!-- insert crf list here
--->
 <ul class="smaller">
 <form name="crfform" action="/hide/autolabel/{{row.id}}" method="POST">
 {% csrf_token %}
 <input type="hidden" name="crf"/>
+<input name="referer" type="hidden" value="{{referer}}" />
 {% for crf in models %}
 <li><a href="javascript:submitCRFForm('{{crf}}');">{{ crf }}</a></li>
 {% endfor %}
@@ -329,10 +336,12 @@ function sendnormal(f) {
 {% csrf_token %}
 <input id="newtags" style="display:none" name="newtags"/>
 <input id="tagtext" style="display:none" name="tagtext" />
+<input name="referer" type="hidden" value="{{referer}}" />
 <a href="javascript:{}" onclick="sendnormal(this);">Save</a> 
 </form>
 </li>
 <li><a href="./">  Help  </a></li>
+<li><a href="{{referer}}">Back</a></li>
 </ul>
 </div>
 
@@ -361,6 +370,7 @@ function sendnormal(f) {
 {% autoescape off %}
 <pre>{{ row.text }}</pre>
 {% endautoescape %}
+<a href="javascript:delete_all_labels()">Clear</a>
 </div>
 
 <div id="sidebar">
