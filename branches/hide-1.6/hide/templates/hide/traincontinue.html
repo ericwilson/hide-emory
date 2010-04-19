@@ -121,11 +121,11 @@ HIDE: Label Documents
 
 <div id="taskbar">
 <ul class="dropdown">
-<li class="dir"><a href="/hide/autolabelset/{{row.id}}">Label</a> 
+<li class="dir"><a href="/hide/autolabelset/{{tag}}">Label</a> 
 <!-- insert crf list here
 -->
 <ul class="smaller">
-<form name="crfform" action="/hide/autolabelset/{{row.id}}" method="POST">
+<form name="crfform" action="/hide/autolabelset/{{tag}}" method="POST">
 {% csrf_token %}
 <input type="hidden" name="crf"/>
 {% for crf in models %}
@@ -135,7 +135,7 @@ HIDE: Label Documents
 </ul>
 </li>
 <li><a href="javascript: submitform()">Train</a></li>
-<li><a href="/hide/deidentify/{{row.id}}">De-Identify</a></li>
+<li><a href="/hide/deidentify/{{tag}}">De-Identify</a></li>
 <li>
 <a href="javascript: submitwritetrain()">Save</a> 
 </li>

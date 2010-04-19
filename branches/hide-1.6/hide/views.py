@@ -554,18 +554,31 @@ def deidentify( request, id ):
 
     repl = dict()
     print "Replacing " + str(REPLACEMENTS)
-    deid = doReplacement( "<object>" + html + "</object>", REPLACEMENTS, repl )
+    deid = doReplacement( "<dontuseme>" + html + "</dontuseme>", REPLACEMENTS, repl )
+
     print "replaced " + str(repl)
-   
-    doc['text'] = deid
+    xhtml = deid
+    spre = re.compile('<dontuseme>', re.I)
+    epre = re.compile('</dontuseme>', re.I)
+    xhtml = re.sub(spre, '', xhtml)
+    xhtml = re.sub(epre, '', xhtml)
+    doc['text'] = xhtml
 
     LEGEND = getLegendSpec( getTagsDict(html) );
    
     models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
+    referer = ''
+    if 'referer' in request.POST:
+      referer = request.POST['referer']
+    if not referer:
+       referer = request.META.get('HTTP_REFERER')
+    if not referer:
+       referer = '/hide/'
     context = {
        'row':doc,
        'displaytags':LEGEND,
        'models':models,
+       'referer':referer,
       }
     return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
    
@@ -576,7 +589,10 @@ def delete_label ( request, tag ):
       if obj['key'] == tag:
          id = obj['id']
          print "deleting " + str(id)
-         del db[id]
+         try:
+            del db[id]
+         except:
+            print "error deleting " + id + " but continuing"
 
 @login_required(redirect_field_name='next')
 def evaluate( request ):
@@ -625,6 +641,45 @@ def accuracy ( request ):
       context = {'accuracy':html, 'title': "Accuracy of " + resultsfile }
       return render_to_response('hide/accuracy.html', context, context_instance=RequestContext(request))
       
+
+@login_required(redirect_field_name='next')
+def autolabelset( request, tag ):
+   if request.method == 'POST':
+      try:
+         crffile = request.POST['crf']
+         print "Autolabeling set " + tag + " with " + crffile
+         objects = db.view('tags/tags', keys=[tag])
+         for obj in objects:
+#            print "about to label " + str(obj)
+            html = obj['value']['text'].replace("<br>", "<br/>")
+            model = CRFMODELDIR + crffile 
+            if not os.path.exists(model):
+               error = "You have not yet trained " + model + ". Please train and try again."
+               context = {'error':error}
+               return render_to_response('hide/error.html', context, context_instance=RequestContext(request))
+            suite = HIDE.SGMLToSuite(html)
+            features = addFeatures(suite)
+            features += "\n";
+            resultsmallet = labelMallet( model, features )
+            sgml = FeaturesToSGML(resultsmallet)
+            doc = dict()
+            doc['text'] = sgml
+            doc['tags'] = tag + '-new'
+            doc['title'] = obj['value']['title']
+            print "saving " + doc['title'] + ' ' + doc['tags']
+            db.save_doc(doc)
+         return HttpResponseRedirect( '/hide/train/' + tag + '-new' )
+      except:  
+         error = str(sys.exc_info())
+         print error
+         return errorpage( request, error )
+   else:
+      request.method = 'GET';
+      return train(request, tag)
+
+def errorpage( request, error ):
+   context = {'error':error}
+   return render_to_response('hide/error.html', context, context_instance=RequestContext(request))
    
 @login_required(redirect_field_name='next')
 def autolabel( request, id ):
@@ -650,7 +705,6 @@ def autolabel( request, id ):
    #TODO update this to allow the user to specify the CRF to use.
    if not os.path.exists(model):
       error = "You have not yet trained the AutoLabeler. Please train and try again."
-      
       context = {'error':error}
       return render_to_response('hide/error.html', context, context_instance=RequestContext(request))
 
@@ -666,10 +720,18 @@ def autolabel( request, id ):
    doc['text'] = sgml
    LEGEND = getLegendSpec( getTagsDict(sgml) )
    models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
+   referer = ''
+   if 'referer' in request.POST:
+     referer = request.POST['referer']
+   if not referer:
+      referer = request.META.get('HTTP_REFERER')
+   if not referer:
+      referer = '/hide/'
    context = {
       'row':doc,
       'displaytags':LEGEND,
       'models':models,
+      'referer':referer,
    }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -698,10 +760,18 @@ def detail(request,id):
 #   tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
    LEGEND = getLegendSpec( getTagsDict(doc['text']) )
    models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
+   referer = ''
+   if 'referer' in request.POST:
+      referer = request.POST['referer']
+   if not referer:
+      referer = request.META.get('HTTP_REFERER')
+   if not referer:
+      referer = '/hide/'
    context = {
       'row':doc,
       'displaytags':LEGEND,
       'models': models,
+      'referer':referer,
       }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -720,10 +790,18 @@ def anondoc(request,id):
    #tags = {'name' : '#FFC21A', 'MRN':'#99CC00', 'age' : '#CC0033', 'date' : '#00CC99', 'accountnum' : '#FFF21A', 'gender' : '#3399FF'}
    LEGEND = getLegendSpec( getTagsDict(doc['text']) )
    models = HIDE.getCRFNamesFromDir( CRFMODELDIR )
+   referer = ''
+   if 'referer' in request.POST:
+      referer = request.POST['referer']
+   if not referer:
+      referer = request.META.get('HTTP_REFERER')
+   if not referer:
+      referer = '/hide/'
    context = {
       'row':doc,
       'displaytags':LEGEND,
       'models':models,
+      'referer':referer,
       }
    return render_to_response('hide/detail.html', context, context_instance=RequestContext(request))
 
@@ -734,14 +812,12 @@ def trainblank(request):
 def train(request,tag):
    trainset = dict()
    count = 0
-
    message = ''
    if ( tag == '' ):
       message = "Please select a set to label from the left"
    else:
       objects = db.view('tags/tags', keys=[tag])
       for obj in objects:
-         print "looking at " + str(obj)
          if obj['key'] == tag:
             obj['value']['labels'] = ", ".join(getTags(obj['value']['text']))
             trainset[obj['id']] = obj
@@ -757,6 +833,7 @@ def train(request,tag):
       'count': count,
       'path': 'train',
       'models': models,
+      'tag' : tag
    }
    
    if ( request.method == "POST" ):
