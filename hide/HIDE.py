@@ -35,19 +35,24 @@ def loadConfig( filename ):
    global MAXMEM
    global DICTIONARY
    global CRFSUITEBIN
-   CONFIGTREE = ElementTree.parse(filename)
-   croot = CONFIGTREE.getroot()
-   HIDELIB = croot.find('hidelib').text
-   EMORYCRFLIB = croot.find('crflib').text 
-   CRFMODELDIR = croot.find('crfmodeldir').text
-   CRFSUITEBIN = croot.find('crfsuitebin').text
-   MAXMEM = croot.find('maxmem').text
-   DICTIONARY = buildDictionary( croot.find('dictionary').text )
-   f = open('/tmp/dict.text', 'w')
-   f.write( str(DICTIONARY ) )
-   f.close()
-   output = ""
-   return output
+   try:
+      CONFIGTREE = ElementTree.parse(filename)
+      croot = CONFIGTREE.getroot()
+      HIDELIB = croot.find('hidelib').text
+      EMORYCRFLIB = croot.find('crflib').text 
+      CRFMODELDIR = croot.find('crfmodeldir').text
+      CRFSUITEBIN = croot.find('crfsuitebin').text
+      MAXMEM = croot.find('maxmem').text
+      DICTIONARY = buildDictionary( croot.find('dictionary').text )
+      #f = open('/tmp/dict.text', 'w')
+      #f.write( str(DICTIONARY ) )
+      #f.close()
+      output = ""
+      return output
+   except:
+      print "Error loading configuration from " + filename
+      print sys.exc_info()
+      raise
 
 def buildDictionary( dir ):
    """Builds the dictionary concept map based on the specified directory"""
