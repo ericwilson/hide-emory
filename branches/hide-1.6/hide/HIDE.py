@@ -241,6 +241,9 @@ def MalletToSGML ( mallet ):
    return sgml
 
 def FeaturesToSGML ( mallet ):
+   f = open ( "/tmp/test.mallet", 'w')
+   f.write(mallet)
+   f.close()
    sgml = ''
    #print "mallet = " + mallet
    fvs = re.split('\n' , mallet)
@@ -270,19 +273,17 @@ def FeaturesToSGML ( mallet ):
       label = features[len(features)-1]
       #print "writing out " + term + " with label " + label
       term = urllib.unquote(term)
+
+      if (label != 'I-' + currentTag) and currentTag != 'O':
+         sgml += '</' + currentTag + '>'
+
       m = re.match('^B-(.*)$', label)
       if m:
          l = m.group(1)
          currentTag = l
          sgml += '<' + currentTag + '>'
-      elif currentTag != 'O' and label != 'I-'+ currentTag:
-         sgml += '</' + currentTag + '>'
-         m = re.match('^B-(.*)$', label)
-         if m:
-            l = m.group(1)
-            currentTag = l
-         else:
-            currentTag = 'O'
+      elif label != 'I-' + currentTag:
+         currentTag = 'O'
 
       sgml += term
 
