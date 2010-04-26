@@ -14,6 +14,7 @@ import datetime
 import random
 import simplejson as json
 #from BeautifulSoup import BeautifulSoup
+import hl7
 import re
 import os
 import sys
@@ -26,6 +27,12 @@ import xmlprinter
 import StringIO
 import xml.sax.saxutils
 import shutil
+import zipfile
+
+
+from zipfile import ZipFile
+
+from tempfile import NamedTemporaryFile
 from models import Object
 
 import tasks
@@ -34,6 +41,7 @@ from xml.sax import make_parser
 from xml.sax.handler import ContentHandler 
 from JSAXParser import ReportXMLHandler
 from JSAXParser import i2b2XMLHandler
+import caTIES
 
 
 
@@ -113,12 +121,19 @@ def add (request):
          print "importing MIT file"
          f = request.FILES['file']
          handle_uploaded_mit_file(f)
-      
       elif 'xmlfile' in request.POST:
          print "importing XML file"
          f = request.FILES['file']
          tags = request.POST['tags']
          handle_uploaded_xml_file(f, tags)
+      elif 'hl7file' in request.POST:
+         f = request.FILES['file'] 
+         tags = request.POST['tags']
+         handle_uploaded_hl7_file(f, tags)
+      elif 'caties' in request.POST:
+         #hard code for now TODO fix later
+         caTIES.importcaTIESData( db, 'localhost', 'caties', 'caties', 'CATIES36PRIVATE_TEST' )
+
       else:
          print "we are just adding a manual document"
          Object.set_db(db)
@@ -415,6 +430,146 @@ def buildXMLFromList( objects ):
    print "**** Warning **** Error building xml from list of objects"
    return "**** Warning **** Error building xml from list of objects" , sys.exc_info()
 
+
+
+
+def handle_uploaded_hl7_file(f, tagi):
+   print "handling hl7 file " + str(f) + " with tag " + tagi
+   
+
+   tempfile = NamedTemporaryFile(delete=False)
+   tempfilename = tempfile.name
+
+   print "creating tempfile at " + tempfilename
+
+   for chunk in f.chunks():
+      tempfile.write(chunk)
+   tempfile.close()
+
+   if ( zipfile.is_zipfile(tempfilename) ):
+      print "importing zip of hl7 files"
+      z = ZipFile(tempfilename, 'r')
+      znames = z.namelist()
+      for n in znames:
+         print "extracting " + str(n)
+         hl7file = z.open(n, 'rU')
+         content = hl7file.read()
+         processEmoryHL7( content, tagi )
+         hl7file.close()
+      
+   else:
+      print "importing non \"zipped\" hl7"
+
+   os.unlink(tempfilename)
+
+
+#different sections of the reports correspond
+# to different codes in hl7
+
+OBX = { 'ID':3 , 'VALUE': 5 }
+
+PID = { 'INTERNALID':3, 'NAME': 5, 'DOB': 7, 'GENDER':8, 'ETHNICITY': 10, 'ADDRESS':11,
+         'PHONE': 13, 'ACCOUNTNUM': 18, 'SSN':19 }
+
+OBR = { 'ORDERNUM': 3, 'DEPARTMENT': 4, 'OBSDATE' : 7 , 'SPECDATE':14, 'PRIINTERPRETER': 32, 'ASSTINTERPRETER': 33 }
+
+def processHL7( hl7input ):
+   clean = hl7input
+   #first we clean up the hl7 to be seperated by \n rather than \r
+   #clean = hl7input.replace("\r", "\n")
+   #clean = clean.replace("\n", "\r")
+   #lines = clean.split("\n") #well this is not quite right
+   #print "hl7 ="
+   #print clean
+
+   hl7report = dict()
+   h = hl7.parse(clean)
+   print "file has " + str(len(h)) + " messages"
+   for i in h:
+      print i
+      field = str(i[0])
+      print "we found " + field
+      if field == 'OBX':
+         id = i[OBX['ID']]
+         for j in range(len(id)):
+            print "id = " + id[j]
+         val = i[OBX['VALUE']]
+         for j in range(len(val)):
+            print "val = " + val[j]
+
+
+def processEmoryHL7 ( hl7input, tag ):
+   clean = hl7input.replace('\n', '\r')
+   hl7report = dict()
+   h = hl7.parse(clean)
+   print "file has " + str(len(h)) + " messages"
+   for i in h:
+#      print i
+      field = str(i[0])
+      #print "we found " + field
+         #write the report to the DB and create new report
+         #db.save_doc(hl7report)
+      if field == 'MSH':
+#         print "DETECTED MSH"
+         if 'title' in hl7report:
+            hl7report['tags'] = tag
+            db.save_doc(hl7report)
+         hl7report = dict()
+
+#PID = { 'INTERNALID':3, 'NAME': 5, 'DOB': 7, 'GENDER':8, 'ETHNICITY': 10, 'ADDRESS':11,
+#         'PHONE': 13, 'ACCOUNTNUM': 18, 'SSN':19 }
+      if field == 'PID':
+         id = i[OBX['ID']]
+         for k in PID.keys():
+            if k == 'ADDRESS':
+               address = i[PID['ADDRESS']]
+               hl7report['addr_street'] = address[0]
+               hl7report['addr_other'] = address[1]
+               hl7report['addr_city'] = address[2]
+               hl7report['addr_state'] = address[3]
+               hl7report['addr_zip'] = address[4]
+               hl7report['addr_country'] = address[5]
+            elif k == 'NAME':
+               name = i[PID['NAME']]
+               hl7report['LAST_NAME'] = name[0]
+               hl7report['FIRST_NAME'] = name[1]
+               if 2 in name:
+                  hl7report['MIDDLE_NAME'] = name[2]
+               if 3 in name:
+                  hl7report['SUFFIX_NAME'] = name[3]
+               if 4 in name:
+                  hl7report['PREFIX_NAME'] = name[4]
+            else:
+               hl7report[k] = str(i[PID[k]])
+
+#OBR = { 'ORDERNUM': 3, 'DEPARTMENT': 4, 'OBSDATE':7, 'SPECDATE':14, 'PRIINTERPRETER': 32, 'ASSTINTERPRETER': 33 }
+      if field == 'OBR':
+         for k in OBR.keys():
+            if k == 'ORDERNUM':
+               hl7report['ACCESSION_NUM'] = i[OBR[k]][0]
+               hl7report[k] = str( i[OBR[k]] )
+            else:
+               hl7report[k] = str( i[OBR[k]] )
+         
+#OBX = { 'ID':3 , 'VALUE': 5 }
+      if field == 'OBX':
+         id = i[OBX['ID']]
+         val = i[OBX['VALUE']]
+         hl7report['HL7ID'] = str( i[OBX['ID']] )
+         hl7report['title'] = hl7report['HL7ID']
+         if 'text' not in hl7report:
+            text = str(val)
+            hl7report['text'] = text.replace("\\T\\", '&') + "\n"
+#            hl7report['text'] = str(val) + "\n"
+         else:
+            text = str(val)
+            hl7report['text'] += text.replace("\\T\\", '&') + "\n"
+   if 'title' in hl7report:
+      print "Adding final report to DB"
+      print hl7report['title']
+      hl7report['tags'] = tag
+      db.save_doc(hl7report)
+   
 
 #this function handles an uploaded xml file. The xml should be of the form
 #<records>
