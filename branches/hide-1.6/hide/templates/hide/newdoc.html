@@ -83,6 +83,26 @@ Select the file:
 <input type="hidden" name="mitfile" value="1"/>
 </form>
 </div>
+<h3>Upload hl7 formatted files</h3>
+<div class="white">
+<form method="post" action="." enctype="multipart/form-data">
+{% csrf_token %}
+Select the files: 
+<input type="file" name="file" size="40"/>  <br/>
+<input type="tags" name="tags" size="40"/>
+<br/>
+<input type="submit" value="Upload Records"/>
+<input type="hidden" name="hl7file" value="1"/>
+</form>
+</div>
+<h3>Import from caTIES</h3>
+<div class="white">
+<form method="post" action="." enctype="multipart/form-data">
+{% csrf_token %}
+<input type="hidden" name="caties" value="1"/>
+<input type="submit" value="Import from caties"/>
+</form>
+</div>
 <h3>Copy and Paste a Single Record</h3>
 <div class="white">
 <form method="post" action=".">

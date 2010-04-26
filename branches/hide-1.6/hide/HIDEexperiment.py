@@ -403,9 +403,9 @@ def calcAccuracyHTMLFromDisk(outdir):
       prec = 0
       rec = 0
       f1 = 0
-      print c + " TP: " + str(stats[c]['TP'])
-      print c + " FP: " + str(stats[c]['FP'])
-      print c + " FN: " + str(stats[c]['FN'])
+      #print c + " TP: " + str(stats[c]['TP'])
+      #print c + " FP: " + str(stats[c]['FP'])
+      #print c + " FN: " + str(stats[c]['FN'])
       if ( stats[c]['TP'] + stats[c]['FP'] != 0 ):
          prec = float(stats[c]['TP']) /  float(stats[c]['TP'] + stats[c]['FP'])
       if ( stats[c]['TP'] + stats[c]['FN'] != 0  ):
@@ -491,7 +491,7 @@ def calcAccuracyHTML(results):
    if ( phiprec + phirec != 0 ):
       phif1 = (2.0 * phiprec * phirec) / ( phiprec + phirec )
    
-   print "made it past the loop"
+   #print "made it past the loop"
    html = ""
    html += "-- Accuracy: " + str(correct) + "/" + str(total) + " = " + str(acc) + "<br/>"
    html += "-- Phi. Prec: " + str(phiprec) + " Rec: " + str(phirec) + " F1: " + str(phif1) + "<br/>"
@@ -518,9 +518,9 @@ def calcAccuracyHTML(results):
       prec = 0
       rec = 0
       f1 = 0
-      print c + " TP: " + str(stats[c]['TP'])
-      print c + " FP: " + str(stats[c]['FP'])
-      print c + " FN: " + str(stats[c]['FN'])
+      #print c + " TP: " + str(stats[c]['TP'])
+      #print c + " FP: " + str(stats[c]['FP'])
+      #print c + " FN: " + str(stats[c]['FN'])
       if ( stats[c]['TP'] + stats[c]['FP'] != 0 ):
          prec = float(stats[c]['TP']) /  float(stats[c]['TP'] + stats[c]['FP'])
       if ( stats[c]['TP'] + stats[c]['FN'] != 0  ):
@@ -531,5 +531,5 @@ def calcAccuracyHTML(results):
       html += "<td>" + str(prec) + "</td><td>" + str(rec) + "</td><td>" + str(f1) + "</td><td>" + c + "</td>"
       html += "</tr>"
    html += "</table>"
-   print "made it past the html"
+   #print "made it past the html"
    return html
