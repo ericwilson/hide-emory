@@ -6,6 +6,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 
+import time
+
 from couchdbkit import *
 from couchdbkit.loaders import FileSystemDocsLoader
 from couchdbkit.ext.django.loading import get_db
@@ -364,10 +366,12 @@ def handle_export ( type, ids ):
    elif type == 'json':
       output = ", \n".join(map(str, objects))
       format = "application/json"
+   elif type == 'hl7':
+      output = buildEmoryHL7FromList(objects)
+      format = "text/plain"
    else:
       #TODO - provide other output formats
       output = ", \n".join(map(str, objects))
-
 
    response = HttpResponse(output, mimetype=format)
    return response
@@ -471,7 +475,7 @@ OBX = { 'ID':3 , 'VALUE': 5 }
 PID = { 'INTERNALID':3, 'NAME': 5, 'DOB': 7, 'GENDER':8, 'ETHNICITY': 10, 'ADDRESS':11,
          'PHONE': 13, 'ACCOUNTNUM': 18, 'SSN':19 }
 
-OBR = { 'ORDERNUM': 3, 'DEPARTMENT': 4, 'OBSDATE' : 7 , 'SPECDATE':14, 'PRIINTERPRETER': 32, 'ASSTINTERPRETER': 33 }
+OBR = { 'ORDERNUM': 3, 'DEPARTMENT': 4, 'OBSDATE' : 7 , 'SPECDATE':14, 'SPECSOURCE':15, 'PRIINTERPRETER': 32, 'ASSTINTERPRETER': 33, 'SIGNOUTTIME':22 }
 
 def processHL7( hl7input ):
    clean = hl7input
@@ -504,13 +508,8 @@ def processEmoryHL7 ( hl7input, tag ):
    h = hl7.parse(clean)
    print "file has " + str(len(h)) + " messages"
    for i in h:
-#      print i
       field = str(i[0])
-      #print "we found " + field
-         #write the report to the DB and create new report
-         #db.save_doc(hl7report)
       if field == 'MSH':
-#         print "DETECTED MSH"
          if 'title' in hl7report:
             hl7report['tags'] = tag
             db.save_doc(hl7report)
@@ -519,7 +518,6 @@ def processEmoryHL7 ( hl7input, tag ):
 #PID = { 'INTERNALID':3, 'NAME': 5, 'DOB': 7, 'GENDER':8, 'ETHNICITY': 10, 'ADDRESS':11,
 #         'PHONE': 13, 'ACCOUNTNUM': 18, 'SSN':19 }
       if field == 'PID':
-         id = i[OBX['ID']]
          for k in PID.keys():
             if k == 'ADDRESS':
                address = i[PID['ADDRESS']]
@@ -569,16 +567,129 @@ def processEmoryHL7 ( hl7input, tag ):
       print hl7report['title']
       hl7report['tags'] = tag
       db.save_doc(hl7report)
+
+def buildEmoryHL7FromList(objects):
+   """This function builds HL7 similar to the COPATH reports at Emory."""
+   output = ''
+   dhticounter = 0
+   for o in objects:
+      dhticounter += 1
+      currenttime = time.strftime("%Y%m%d%H%M%S")
+      output += "MSH|^~\&|COPATHPLUS||HIS||" + currenttime + "||ORU^R01|" + str(dhticounter) + "|P|2.3.1\r"
+
+      #PID|1||6010358^^^A||Test^TEST||19910101|M||4|4650 Sunny st.^^Canton^MA^02021^United States||(617)541-2140|||||0921800002^^^A|321-05-4879
+
+      #build the PID variables
+      internalid = "NA"
+      if 'INTERNALID' in o:
+         internalid =str(o['INTERNALID'])
+      namearray = ["" for x in range(5)]
+      nametypes = ['LAST_NAME', 'FIRST_NAME', 'MIDDLE_NAME', 'SUFFIX_NAME', 'PREFIX_NAME' ]
+      for i in range(len(nametypes)):
+         if nametypes[i] in o:
+            namearray[i] = o[nametypes[i]]
+
+      namestring = "^".join( namearray )
+      dob = "00000000"
+      if "DOB" in o:
+         dob = o['DOB']
+      gender= "U"
+      if "GENDER" in o:
+         gender = o['GENDER']
+
+      addressarray = ["" for x in range(6)]
+      addresstypes = ["addr_street", "addr_other", "addr_city", "addr_state", "addr_zip", "addr_country"]
+
+      for i in range( len(addresstypes) ):
+         if addresstypes[i] in o:
+            addressarray[i] = o[addresstypes[i]]
+
+      addressstring = "^".join( addressarray )
+
+      ethnicity = 0
+      if "ETHNICITY" in o:
+         ethnicity = o['ETHNICITY']
+
+      phone = "(000)000-0000"
+      if "PHONE" in o:
+         phone = o['PHONE']
+
+      accountnum = "000^^^0"
+      if "ACCOUNTNUM" in o:
+         accountnum = o['ACCOUNTNUM']
+
+      ssn = "000-00-0000"
+      if "SSN" in o:
+         ssn = o['SSN']
+
+      output += "PID|1||" + internalid + "||" + namestring + "||" + dob +"|" + gender + "||" + ethnicity + "|" + addressstring + "||" + phone + "|||||" + accountnum + "|" + ssn + "\r"
+
+      #build OBR message
+      #OBR = { 'ORDERNUM': 3, 'DEPARTMENT': 4, 'OBSDATE' : 7 , 'SPECDATE':14, 'PRIINTERPRETER': 32, 'ASSTINTERPRETER': 33 }
+
+      ordernum = "00^CoPathPlus"
+      if "ORDERNUM" in o:
+         ordernum = o['ORDERNUM']
+      
+      department = "D^Department"
+      if "DEPARTMENT" in o:
+         department = o['DEPARTMENT']
+
+      obsdate = "000000000000"
+      if "OBSDATE" in o:
+         obsdate = o['OBSDATE']
+
+      specdate = "000000000000"
+      if "SPECDATE" in o:
+         specdate = o['SPECDATE']
+
+      specsource = "NA"
+      if "SPECSOURCE" in o:
+         specsource = o['SPECSOURCE']
+
+      priinter = "0^STUFF^PRI"
+      if "PRIINTERPRETER" in o:
+         priinter = o['PRIINTERPRETER']
+
+      asstinter = "0^STUFF^ASST" 
+      if "ASSTINTERPRETER" in o:
+         asstinter = o['ASSTINTERPRETER']
+
+      signout = "000000000000"
+      if "SIGNOUT" in o:
+         signout = o['SIGNOUT']
+
+      #OBR|1||C09-5^CoPathPlus|S^Surgical Pathology|||200908101522|||||||200908101522|LIV BX|||||||200908101541||SP|F|||||||11579^CDHT^Test1|e71^CDHT^Test^M
+      output += "OBR|1||" + ordernum + "|" + department + "|||" + obsdate + "|||||||" + specdate + "|" + specsource + "|||||||" + signout + "||SP|F|||||||" + priinter + "|" + asstinter + "\r"
+
+      #now build all the OBX
+      #OBX|28|TX|C09-5&rpt^^99DHT||some future date by various physicians, including but not limited to||||||F
+
+      mnum = 1
+      text = o['text']
+      hl7id = "NA"
+      if 'HL7ID' in o:
+         hl7id = o['HL7ID']
+
+      lines = text.split('\n')
+      for l in lines:
+         clean = hl7escape(l)
+         output += "OBX|" + str(mnum) + "|TX|" + hl7id + "||" + clean + "||||||F\r"
+         mnum += 1
+
+   return output
+
    
+def hl7escape( t ):
+   text = t.replace('&', "\\T\\")
+   return text
 
 #this function handles an uploaded xml file. The xml should be of the form
 #<records>
 #<record>
-#<pid>number</pid>
-#<rid>number</rid>
+#<title>title</title>
 #<content>The Text of the Record here</content>
 #</records>
-
 def handle_uploaded_xml_file(f, tagi):
    print "parsing " + f.name
    parser = make_parser()
