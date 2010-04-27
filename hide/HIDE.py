@@ -148,8 +148,8 @@ def SGMLToMallet ( sgml ):
       options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
 #   print "tidy = " + xhtml 
    #pull everything between pre tags
-   spre = re.compile('^<pre>', re.I)
-   epre = re.compile('</pre>$', re.I)
+   spre = re.compile('<pre>', re.I)
+   epre = re.compile('</pre>', re.I)
    xhtml = re.sub(spre, '', xhtml)
    xhtml = re.sub(epre, '', xhtml)
    xhtml = '<report>' + xhtml + '</report>'
@@ -167,8 +167,8 @@ def SGMLToSuite ( sgml ):
    xhtml, errors = tidy_document( "<pre>" + sgml + "</pre>",
       options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
    #pull everything between pre tags
-   spre = re.compile('^<pre>', re.I)
-   epre = re.compile('</pre>$', re.I)
+   spre = re.compile('<pre>', re.I)
+   epre = re.compile('</pre>', re.I)
    xhtml = re.sub(spre, '', xhtml)
    xhtml = re.sub(epre, '', xhtml)
    xhtml = '<report>' + xhtml + '</report>'
