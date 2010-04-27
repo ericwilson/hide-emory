@@ -4,6 +4,7 @@ HIDE is a [http://djangoproject.com Django] application with a [http://couchdb.a
 
 =Installation Instructions=
 Overview of installation:
+  * Install Python v2.6. (Python 3.0 and higher doesn't work with Django)
   * Install CouchDB. (details coming soon)
   * Install the Django Framework. (details coming soon)
   * Create a Django project and reference the HIDE application.
