@@ -7,6 +7,7 @@ Overview of installation:
   * Install Python v2.6. (Python 3.0 and higher doesn't work with Django)
   * Install CouchDB. (details coming soon)
   * Install the Django Framework. (details coming soon)
+  * Install [http://www.chokkan.org/software/crfsuite/ CRFSuite].
   * Create a Django project and reference the HIDE application.
   * Download the HIDE application from source.
   * Activate the HIDE application in the Django project.
