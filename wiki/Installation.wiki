@@ -61,6 +61,23 @@ http://bitbucket.org/ubernostrum/django-registration
 
 Here are the [http://bitbucket.org/ubernostrum/django-registration/src/tip/INSTALL install instructions for django-registration].
 
+Install HTML Tidy from http://tidy.sourceforge.net/. Note that on Windows you will need to install the dll somewhere that the system can find it. 
+
+Install necessary python modules.
+  {{{
+xml.dom.minidom
+urllib
+subprocess
+elementtree
+datetime
+simplejson
+tidylib
+couchdbkit
+celery
+hl7
+xmlprinter
+  }}}
+
 ===Configure the `settings.py` file===
   * Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
 {{{
@@ -79,25 +96,16 @@ COUCHDB_USER = 'your_username'
 COUCHDB_PASS = 'your_password'
   }}}
 
-  * Install necessary python modules.
-  {{{
-xml.dom.minidom
-urllib
-subprocess
-elementtree
-tempfile 
-datetime
-random
-simplejson
-tidylib
-couchdbkit
-  }}}
 
   * Let HIDE know where the underlying software powering the user interface is by specifying the configuration file:
 {{{
 HIDECONFIG = '/path/to/HIDE-config.xml'
 }}}
 Change `/path/to` to the location you put the config file.
+
+
+
+
 
 
 ===Configure the `urls.py` file===
