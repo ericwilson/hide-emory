@@ -241,9 +241,6 @@ def MalletToSGML ( mallet ):
    return sgml
 
 def FeaturesToSGML ( mallet ):
-   f = open ( "/tmp/test.mallet", 'w')
-   f.write(mallet)
-   f.close()
    sgml = ''
    #print "mallet = " + mallet
    fvs = re.split('\n' , mallet)
