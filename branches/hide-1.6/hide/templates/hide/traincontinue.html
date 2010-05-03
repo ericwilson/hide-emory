@@ -158,8 +158,6 @@ HIDE: Label Documents
 {% if message %}
 <h2>{{message}}</h2>
 {% else %}
-<h2>Label the documents below</h2>
-<h2>You may train the AutoLabeler when finished</h2>
 <form name="myform" method="post" action="#">
 {% csrf_token %}
 {% comment %}
