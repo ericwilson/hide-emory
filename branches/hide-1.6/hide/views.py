@@ -710,14 +710,14 @@ def handle_uploaded_xml_file(f, tagi):
           name = x
           print "adding " + name + " to CouchDB"
           #print y
-          Object.set_db(db)
-          object = Object(
-               title = name,
-               text = y,
-               tags = tagi
-          )
-          #print "[" + currentRecord + "]" 
-          object.save()
+       Object.set_db(db)
+       object = Object(
+            title = name,
+            text = y,
+            tags = tagi
+       )
+       #print "[" + currentRecord + "]" 
+       object.save()
        print object['_id']
    #   print reports.keys()
    #   print reports.keys().sort()
