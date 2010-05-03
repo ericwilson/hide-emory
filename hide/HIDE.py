@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import xmlprinter
+import math
 import StringIO
 from elementtree import ElementTree
 from tempfile import NamedTemporaryFile
@@ -332,6 +333,10 @@ def buildTemplate( sgml, tagstoa ):
             #print "found " + tag + " = " + value
             extract.append(value)
 
+def sortLPM ( candidates ):
+   s = sorted( candidates, key=lambda c: c['length'])
+   return s
+
 #addFeatures calls addSomeFeatures with all features as argument
 def addFeatures( features ):
    """Generates dictionary, history , and regular expression based features for input."""
@@ -341,13 +346,41 @@ def addFeatures( features ):
 def addSomeFeatures( suite, ftypes ):
    """Generates dictionary, history , and regular expression based features for input."""
 
+   print >>sys.stderr, "adding features"
+   suite = suite.strip()
+   fvs = suite.split("\n")
+
+   if 'dictionary' in ftypes:
+      lpmcandidates = getLPMCandidates( fvs )
+      for k in lpmcandidates.keys():
+         s = sortLPM(lpmcandidates[k])
+         
+         filter = dict()
+         for si in s:
+            start = si['start']
+            end = si['end']
+            if (start not in filter) and (end not in filter):
+               j = 0
+               i = start
+               while( i <= end ):
+                  filter[i] = 1
+                  fvs[i] += "\tLPMIN_" + k
+                  #not sure if we want the next feature.
+                  fvs[i] += "\tLPMPHRASE_" + k + "_" + si['phrase']
+                  fvs[i] += "\tLPMPOSIT_" + k + ":" + str(j)
+                  fvs[i] += "\tLPMOCCNUM_" + k + ":" + str(round(float(si['occnum'])/ float(len(fvs)), 4))
+                  fvs[i] += "\tLPMLENGTH_" + k + ":" + str(si['length'])
+                  i += 1
+                  j += 1
+
+
+               
  #  print str(ftypes)
    history = []
    historySize = 4
 
-   suite = suite.strip()
-   fvs = suite.split("\n")
-   print >>sys.stderr, "adding features"
+   termoccnum = dict()
+
    for i in range(len(fvs)):
       fvs[i] = fvs[i].strip()
       if fvs[i] == '':
@@ -360,14 +393,19 @@ def addSomeFeatures( suite, ftypes ):
       cterm = urllib.unquote(term)
       foundfeatures = []
       if 'regex' in ftypes:
-#         print "adding regex features"
          foundfeatures.extend(regexMatchFeatures( cterm ))
       if 'affix' in ftypes:
-#         print "adding affix features"
          affixfeatures = affixFeatures( cterm )
          foundfeatures.extend(affixfeatures)
       if 'context' in ftypes:
-#         print "adding context features"
+         if term not in termoccnum:
+            termoccnum[term] = 0
+         termoccnum[term] += 1
+         if ( isTerm( cterm ) ):
+            foundfeatures.append( "TERMOCCNUM:" + str(round(float(termoccnum[term]) / float(len(fvs)) , 4) ) )
+#         termposit = round( float(i) / float( len(fvs) ) , 4)
+#         foundfeatures.append( "TERMPOSIT:" + str(termposit) )
+
          for j in range(0, historySize):
             if j >= len(history):
                break
@@ -378,16 +416,137 @@ def addSomeFeatures( suite, ftypes ):
             history = history[1:(len(history)-1)]
             
       fvs[i] = fvs[i] + "\t" + "\t".join(foundfeatures)
-      if 'dictionary' in ftypes:
-#         print "adding dictionary features"
-         in_dict = checkDictionaries( term )
-         if in_dict != '':
-            fvs[i] += "\t" + in_dict
+#      if 'dictionary' in ftypes:
+#         in_dict = checkDictionaries( term )
+#         if in_dict != '':
+#            fvs[i] += "\t" + in_dict
 
    features = "\n".join(fvs) #remake the string from the fvs
    features = features.strip()
    features += "\n";
    return features
+
+def isTerm( term ):
+   if re.search('\\s+', term):
+      return 0
+
+   return 1
+
+
+def getLPMCandidates( fvs ):
+
+   #build the document terms
+   doc = [None] * len(fvs)
+
+   #initialize the candidates dictionary->array
+
+   #while we are generating the LPM candidates we go ahead
+   #and keep track of the number of occurences of each LPM
+
+   candidates = dict()
+   for k in DICTIONARY.keys():
+      candidates[k] = []
+
+#   print "building dict for " + str(candidates)
+
+   for i in range( len(fvs) ):
+      fvs[i] = fvs[i].strip()
+      if fvs[i] == '':
+         print >>sys.stderr, "warning we have an empty fvs"
+         continue
+      features = re.split('\\s', fvs[i])
+      token = features[1]
+      m = re.match('TERM_(.*)', token)
+      term = m.group(1)
+      cterm = urllib.unquote(term)
+      doc[i] = cterm
+      
+   
+   #the checking here is a bit sloppy and can be sped up by not relooping over the entire document for each dictionary. For now we just want to get this running for testing the affect of the feature on accuracy. TODO - optimize this loop.  It can probably be done by just making the start and end dictionaries of integers instead of just integers, but maybe not.
+   l = len(doc)
+   for k in DICTIONARY.keys():
+      occnum = dict()
+      start = 0
+
+      while start < l:
+         #skip whitespace
+         while (start < l) and ( re.match( "\\s+", doc[start]) ):
+            start += 1
+         end = start
+         
+         #move end as far foward as we continue matching a phrase in the dictionary
+         np = ''.join(doc[start:(end+1)]).lower()
+#         print "Checking " + np
+         while (end < l) and (np in DICTIONARY[k] ):
+#            print "expanding " + np
+            end += 1
+            #move end forward as long as we see whitespace
+            while (end < l) and ( re.match( "^\\s+$", doc[end]) ):
+               end += 1
+            np = ''.join(doc[start:(end+1)]).lower()
+         
+         #we are now 1 past the phrase match or we have no match
+         #rollback end until we have match
+         while start <= end:
+            p = ''.join( doc[start:(end+1)] ).lower()
+            pentry = None
+            if p in DICTIONARY[k]:
+               pentry = DICTIONARY[k][p]
+            if pentry and pentry[1] == 1:
+               if end < l:
+                  if p != '' and p != '\n':
+                     length = len( re.split('\\s', p) )
+                     if p not in occnum:
+                        occnum[p] = 0
+                     occnum[p] += 1
+                     o = occnum[p]
+                     temp = { 'start':start,
+                        'end':end,
+                        'length':length,
+                        'phrase':p,
+                        'occnum':o,
+                        #'dictionary':k 
+                        }
+                     #if length > 1:
+                     #   print "adding lpm candidate = " + str( temp )
+                     candidates[k].append( temp )
+               break
+            end -= 1
+
+         start += 1
+
+#   print str(candidates)
+   return candidates
+
+
+
+def LPMDictLookUp( phrase ):
+   p = phrase.lower()
+   in_dict = []
+   t = term.lower()
+   in_dict = []
+   #look through all of the dictionaries and add to in_dict array if match
+   for k in DICTIONARY.keys():
+      if t in DICTIONARY[k]:
+#         print "Found " + t + " in " + k
+         print str(DICTIONARY[k][t])
+         in_dict.append("IN_" + str(k))
+
+   return "\t".join(in_dict)
+
+
+def checkDictionaries( term ):
+   t = term.lower()
+   in_dict = []
+   #look through all of the dictionaries and add to in_dict array if match
+   for k in DICTIONARY.keys():
+      if t in DICTIONARY[k]:
+#         print "Found " + t + " in " + k
+         #print str(DICTIONARY[k][t])
+         in_dict.append("IN_" + str(k))
+
+   return "\t".join(in_dict)
+
 
 def addSomeFeaturesMallet( mallet, ftypes ):
    """Generates dictionary, history , and regular expression based features for input."""
@@ -437,6 +596,7 @@ def addSomeFeaturesMallet( mallet, ftypes ):
    features = "\n".join(fvs) #remake the string from the fvs
    features = features.strip()
    return features
+
 def affixFeatures( term ):
    alength = 3
    if (len(term) < alength):
@@ -558,15 +718,6 @@ def addFeaturesPerl( mallet ):
    features = "\n".join(fvs) #remake the string from the fvs
    return features
 
-def checkDictionaries( term ):
-   t = term.lower()
-   in_dict = []
-   #look through all of the dictionaries and add to in_dict array if match
-   for k in DICTIONARY.keys():
-      if t in DICTIONARY[k]:
-         in_dict.append("IN_" + str(k))
-
-   return "\t".join(in_dict)
    
 
 def trainModel( modelfile, mallet ):
