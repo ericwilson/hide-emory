@@ -14,7 +14,7 @@ def createKFold( marray, k ):
    trainset = [None]*k
    testset = [None]*k
 
-   for z in range(k):
+   for z in xrange(k):
       trainset[z] = []
       testset[z] = []
 
@@ -28,7 +28,7 @@ def createKFold( marray, k ):
 #      print "looking at " + str(z)
       testset[t%k].append(i)
 #      print "we are adding " + str(i) + " to testset " + str(t % k)
-      for j in range(k):
+      for j in xrange(k):
          if ( j != (t % k) ):
             if len(trainset[t%k]) == 0:
                trainset[t%k] = []
@@ -75,7 +75,7 @@ def writeKToDisk( dir, trainset, testset, k, ext ):
    print >> sys.stderr, "writing to disk"
    if not os.path.exists(dir):
       os.makedirs(dir)
-   for i in range(k):
+   for i in xrange(k):
       filename = dir + "/test" + str(i) + ext
       print >> sys.stderr, "writing " + filename+ " to disk"
  #     print "we have to split it up. and write it " + str(len(testset[i]))
@@ -157,12 +157,12 @@ def readSetsFromDisk(dir):
    return [trainset, testset, len(trainset)]
 
 def runTrainOnDisk( outdir, trainset ):
-   for i in range(len(trainset)):
+   for i in xrange(len(trainset)):
       modelfile = outdir + "/train" + str(i) + ".crf"
       HIDE.trainModel( modelfile, trainset[i] )
 
 def runTestOnDisk( outdir, testset ):
-   for i in range(len(testset)):
+   for i in xrange(len(testset)):
       modelfile = outdir + "/train" + str(i) + ".crf"
       outfile = outdir + "/test" + str(i) + ".results"
       HIDE.testModel( outfile, modelfile, testset[i] )
@@ -533,3 +533,41 @@ def calcAccuracyHTML(results):
    html += "</table>"
    #print "made it past the html"
    return html
+
+def localSample ( trainset, k, historySize, probkeep ):
+   sampleset = [None] * len(trainset)
+   for j in range(len(trainset)):
+      print "building " + str(j) + " training set"
+      fvs = trainset[j].split("\n")
+      keep = dict()
+
+      #keep every token with probablitity probkeep
+      # if token is labeled something other than O always keep it and
+      #make sure to select the historySize tokens before and after it
+      fvslen = len(fvs)
+      for i in xrange(fvslen):
+         fvs[i] = fvs[i].strip()
+         if fvs[i] == '':
+            print >>sys.stderr, "warning we have an empty FV"
+            continue
+         features = re.split('\\t', fvs[i])
+         label = features[0]
+         if label == "O":
+            #keep it with probablity probkeep
+            r = random.random()
+            if r < probkeep:
+               keep[i] = 1
+         else:
+            #definitely keep it and keep history about it
+            for l in xrange((i-historySize), min( [ fvslen, (i+historySize+1) ] )):
+               keep[l] = 1
+      
+      #build sample for sampleset j
+      set = []
+      for k in sorted(keep.keys()):
+         set.append(fvs[k])
+      sampleset[j] = "\n".join( set ) + "\n"
+   return sampleset
+         
+
+         

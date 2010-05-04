@@ -280,6 +280,12 @@ def analysis( request, tag ):
          outlabel = request.POST['outdir']
          tempoutdir = HIDE.CRFMODELDIR + "/test/" + outlabel
          print "writing sets to disk"
+         #here we can do sampling
+         if 'localsample' in ftypes:
+            oprob = request.POST['oprob']
+            print "performing " + str(float(oprob)) + " sampling based training"
+            historySize = 4 #how many terms to go pull for context when finding matching tag
+            trainset = HIDEexperiment.localSample( trainset, k, historySize, float(oprob) )
          HIDEexperiment.writeKToDisk( tempoutdir, trainset, testset, k, '.features' )
       if 'train' in request.POST:
          (trainset, testset, k) = HIDEexperiment.readSetsFromDisk( outdir )
@@ -708,7 +714,7 @@ def handle_uploaded_xml_file(f, tagi):
           name = "PhysioNet-" + k + "-" + x
        else:
           name = x
-          print "adding " + name + " to CouchDB"
+       print "adding " + name + " with tags = " + tags + " to CouchDB"
           #print y
        Object.set_db(db)
        object = Object(
