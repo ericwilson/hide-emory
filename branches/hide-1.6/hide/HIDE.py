@@ -381,14 +381,17 @@ def addSomeFeatures( suite, ftypes ):
 
    termoccnum = dict()
 
+   rterm = re.compile( 'TERM_(.*)' )
+   rf = re.compile('\\t')
+
    for i in range(len(fvs)):
       fvs[i] = fvs[i].strip()
       if fvs[i] == '':
          print >>sys.stderr, "warning we have an empty FV"
          continue
-      features = re.split('\\s', fvs[i])
+      features = rf.split(fvs[i])
       token = features[1]
-      m = re.match('TERM_(.*)', token)
+      m = rterm.match(token)
       term = m.group(1)
       cterm = urllib.unquote(term)
       foundfeatures = []
@@ -413,7 +416,7 @@ def addSomeFeatures( suite, ftypes ):
             fvs[i-j-1] += "\tNEXT" + str(j) + "_" + term
          history.append( term )
          if ( len(history) > historySize ):
-            history = history[1:(len(history)-1)]
+            history = history[1:(len(history))]
             
       fvs[i] = fvs[i] + "\t" + "\t".join(foundfeatures)
 #      if 'dictionary' in ftypes:
@@ -773,6 +776,8 @@ def testModel (outfile, modelfile, mallet ):
 
 
 def labelMallet( modelfile, mallet ):
+   mallet = mallet.strip()
+   mallet += "\n"
    tempfile = NamedTemporaryFile(delete=False)
    tempfile.write(mallet)
    tempfile.close()
