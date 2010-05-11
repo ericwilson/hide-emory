@@ -31,7 +31,6 @@ from xml.sax.handler import ContentHandler
 def loadConfig( filename ):
    global CONFIGTREE
    global HIDELIB
-   global EMORYCRFLIB
    global CRFMODELDIR
    global MAXMEM
    global DICTIONARY
@@ -40,7 +39,6 @@ def loadConfig( filename ):
       CONFIGTREE = ElementTree.parse(filename)
       croot = CONFIGTREE.getroot()
       HIDELIB = croot.find('hidelib').text
-      EMORYCRFLIB = croot.find('crflib').text 
       CRFMODELDIR = croot.find('crfmodeldir').text
       CRFSUITEBIN = croot.find('crfsuitebin').text
       MAXMEM = croot.find('maxmem').text
@@ -735,10 +733,6 @@ def trainModel( modelfile, mallet ):
    #instead of using MALLET we can use CRFSuite.
    execme = CRFSUITEBIN + " learn -m \"" + modelfile + "\" " + tempfile.name + " >\"" + modelfile + ".log\""
 
-#   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
-#   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
-#   execme = 'java ' + javaargs + " EmoryCRF --fully-connected false --train true --model-file " + modelfile + " " + tempfile.name + " 2>" + modelfile + ".log"
-
    print >> sys.stderr, "executing " + execme
    prevtime = time.time()
 
@@ -784,11 +778,6 @@ def labelMallet( modelfile, mallet ):
    tempfile = NamedTemporaryFile(delete=False)
    tempfile.write(mallet)
    tempfile.close()
-
-   #TODO update this to allow the user to specify the CRF to use.
-#   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
-#   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
-#   execme = 'java ' + javaargs + " EmoryCRF --model-file " + modelfile + " " + tempfile.name
 
    execme = CRFSUITEBIN + " tag -m " + modelfile + " " + tempfile.name
 
