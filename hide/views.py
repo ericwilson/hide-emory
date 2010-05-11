@@ -54,7 +54,6 @@ log = ''
 try:
    log = loadConfig(getattr(settings,'HIDECONFIG', 'default'))
    HIDELIB = HIDE.HIDELIB
-   EMORYCRFLIB = HIDE.EMORYCRFLIB # getattr(settings, 'EMORYCRFLIB', '/tmp/')
    CRFMODELDIR = HIDE.CRFMODELDIR # getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
    if not os.path.isdir(CRFMODELDIR):
       os.mkdir( CRFMODELDIR )
