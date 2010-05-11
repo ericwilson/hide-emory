@@ -534,40 +534,41 @@ def calcAccuracyHTML(results):
    #print "made it past the html"
    return html
 
+def contextSample( set, historySize, probkeep ):
+   print >>sys.stderr, "building context sample"
+   keep = dict()
+   set = set.strip()
+   fvs = set.split("\n")
+   fvslen = len(fvs)
+   res = re.compile('\\t')
+   for i in xrange(fvslen):
+      fvs[i] = fvs[i].strip()
+      if fvs[i] == '':
+         print >>sys.stderr, "warning we have an empty FV"
+         continue
+      features = res.split(fvs[i])
+      label = features[0]
+      if label == "O":
+         #keep it with probablity probkeep
+         r = random.random()
+         if r < probkeep:
+            keep[i] = 1
+      else:
+         #definitely keep it and keep history about it
+         for l in xrange((i-historySize), min( [ fvslen, (i+historySize+1) ] )):
+            keep[l] = 1
+   
+   #build sample for sampleset j
+   set = []
+   for k in sorted(keep.keys()):
+      set.append(fvs[k])
+   sampleset = "\n".join( set ) + "\n"
+   return sampleset
+
+
 def localSample ( trainset, k, historySize, probkeep ):
    sampleset = [None] * len(trainset)
-   for j in range(len(trainset)):
+   for j in xrange(len(trainset)):
       print "building " + str(j) + " training set"
-      fvs = trainset[j].split("\n")
-      keep = dict()
-
-      #keep every token with probablitity probkeep
-      # if token is labeled something other than O always keep it and
-      #make sure to select the historySize tokens before and after it
-      fvslen = len(fvs)
-      for i in xrange(fvslen):
-         fvs[i] = fvs[i].strip()
-         if fvs[i] == '':
-            print >>sys.stderr, "warning we have an empty FV"
-            continue
-         features = re.split('\\t', fvs[i])
-         label = features[0]
-         if label == "O":
-            #keep it with probablity probkeep
-            r = random.random()
-            if r < probkeep:
-               keep[i] = 1
-         else:
-            #definitely keep it and keep history about it
-            for l in xrange((i-historySize), min( [ fvslen, (i+historySize+1) ] )):
-               keep[l] = 1
-      
-      #build sample for sampleset j
-      set = []
-      for k in sorted(keep.keys()):
-         set.append(fvs[k])
-      sampleset[j] = "\n".join( set ) + "\n"
+      sampleset[j] = contextSample( trainset[j], historySize, probkeep ) 
    return sampleset
-         
-
-         

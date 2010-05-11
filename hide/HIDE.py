@@ -114,10 +114,10 @@ def getLegendSpec( matches ):
    for l in root.findall('gui/tag'):
       name = l.find('label').text.lower()
       color = l.find('color').text
-      print >>sys.stderr, "comparing "  + name + " to " + str(matches)
+#      print >>sys.stderr, "comparing "  + name + " to " + str(matches)
 #      if name not in matches:
 #         continue
-      print >>sys.stderr, "adding " + name + " to legend"
+#      print >>sys.stderr, "adding " + name + " to legend"
       repl[name] = color
    return repl
 
@@ -384,6 +384,8 @@ def addSomeFeatures( suite, ftypes ):
    rterm = re.compile( 'TERM_(.*)' )
    rf = re.compile('\\t')
 
+   rspace = re.compile( '\\s+' )
+
    for i in range(len(fvs)):
       fvs[i] = fvs[i].strip()
       if fvs[i] == '':
@@ -404,7 +406,7 @@ def addSomeFeatures( suite, ftypes ):
          if term not in termoccnum:
             termoccnum[term] = 0
          termoccnum[term] += 1
-         if ( isTerm( cterm ) ):
+         if ( not rspace.search( cterm ) ):
             foundfeatures.append( "TERMOCCNUM:" + str(round(float(termoccnum[term]) / float(len(fvs)) , 4) ) )
 #         termposit = round( float(i) / float( len(fvs) ) , 4)
 #         foundfeatures.append( "TERMPOSIT:" + str(termposit) )
