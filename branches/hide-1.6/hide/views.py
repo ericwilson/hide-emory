@@ -77,10 +77,12 @@ try:
    db = SERVER.get_or_create_db('hide_objects')
    deiddb = SERVER.get_or_create_db('hide_deid')
    couch_schema = getattr(settings, 'COUCHDB_SCHEMA', 'error')
-   print "Syncing schema " + couch_schema
-   loader = FileSystemDocsLoader(couch_schema)
-   loader.sync(db)
-   print "done syncing schema"
+   syncon = getattr(settings,'COUCHSYNC', 0)
+   if syncon == 1:
+      print "Syncing schema " + couch_schema
+      loader = FileSystemDocsLoader(couch_schema)
+      loader.sync(db)
+      print "done syncing schema"
 except :
    print "Couldn't connect to couchdb"
 
@@ -281,11 +283,6 @@ def analysis( request, tag ):
          tempoutdir = HIDE.CRFMODELDIR + "/test/" + outlabel
          print "writing sets to disk"
          #here we can do sampling
-         if 'localsample' in ftypes:
-            oprob = request.POST['oprob']
-            print "performing " + str(float(oprob)) + " sampling based training"
-            historySize = 4 #how many terms to go pull for context when finding matching tag
-            trainset = HIDEexperiment.localSample( trainset, k, historySize, float(oprob) )
          HIDEexperiment.writeKToDisk( tempoutdir, trainset, testset, k, '.features' )
       if 'train' in request.POST:
          (trainset, testset, k) = HIDEexperiment.readSetsFromDisk( outdir )
@@ -301,6 +298,17 @@ def analysis( request, tag ):
          context['results'] = html
       if 'clear' in request.POST:
          shutil.rmtree( outdir )
+      if 'sample' in request.POST:
+         historySize = request.POST['historysize']
+         oprob = request.POST['oprob']
+         outlabel = request.POST['outdir']
+         print "performing " + str(float(oprob)) + " sampling based training"
+         (trainset, testset, k) = HIDEexperiment.readSetsFromDisk( outdir )
+         trainset = HIDEexperiment.localSample( trainset, k, int(historySize), float(oprob) )
+         outlabel = request.POST['outdir']
+         tempoutdir = HIDE.CRFMODELDIR + "/test/" + outlabel
+         print "writing sample sets to disk"
+         HIDEexperiment.writeKToDisk( tempoutdir, trainset, testset, k, '.features' )
 
    (kfoldinfo,k) = HIDEexperiment.getKFoldInfoFromDisk( HIDE.CRFMODELDIR + "/test/" + tag )
    context['features'] = HIDEexperiment.getFeaturesInfoFromDisk( outdir )

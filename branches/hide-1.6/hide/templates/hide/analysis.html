@@ -94,10 +94,22 @@ k = <input type="text" name="kin" value="{{ k }}"/>
       <input type="checkbox" name="ftype" value="affix"/>Affix
       <input type="checkbox" name="ftype" value="context"/>Context
       <input type="checkbox" name="ftype" value="dictionary"/>Dictionary
-      <input type="checkbox" name="ftype" value="localsample"/>Local Sample
-      <input type="text" name="oprob"/> Sample Probability
 	   <input type="hidden" name="k" value={{ k }}/>
       <input type="hidden" name="features"/>
+      <input type="Submit" value="Go"/>
+   </form>
+   {{features}}
+</div>
+
+<div id="sampling" class="boxed">
+   <h2>Write sampled feature files to disk</h2>
+   <form name="sampleform" method="POST">
+      {%csrf_token%}
+      Output Directory:<input type="text" name="outdir" value="{{tag}}-sample"/> <br/>
+      Sample Probability:<input type="text" name="oprob"/> <br/>
+      History Size:<input type="text" value="4" name="historysize"/> <br/>
+	   <input type="hidden" name="k" value={{ k }}/>
+      <input type="hidden" name="sample"/>
       <input type="Submit" value="Go"/>
    </form>
    {{features}}
