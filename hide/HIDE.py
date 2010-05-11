@@ -733,7 +733,7 @@ def trainModel( modelfile, mallet ):
    tempfile.close()
 
    #instead of using MALLET we can use CRFSuite.
-   execme = CRFSUITEBIN + " learn -m " + modelfile + " " + tempfile.name + " 2>&1 >" + modelfile + ".log"
+   execme = CRFSUITEBIN + " learn -m \"" + modelfile + "\" " + tempfile.name + " 2>&1 >\"" + modelfile + ".log\""
 
 #   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
 #   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
@@ -745,9 +745,10 @@ def trainModel( modelfile, mallet ):
    proc = subprocess.Popen( execme,
                shell=True,
                stdout=subprocess.PIPE,
-            #   stderr=subprocess.PIPE,
+               stderr=subprocess.PIPE,
                )
    stdout_value, stderr_value = proc.communicate()
+   print >> sys.stderr, "stderr from crfsuite: " + stderr_value
    os.unlink(tempfile.name)
    currtime = time.time()
    passedtime = currtime - prevtime
