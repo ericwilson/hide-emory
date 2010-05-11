@@ -733,7 +733,7 @@ def trainModel( modelfile, mallet ):
    tempfile.close()
 
    #instead of using MALLET we can use CRFSuite.
-   execme = CRFSUITEBIN + " learn -m \"" + modelfile + "\" " + tempfile.name + " 2>&1 >\"" + modelfile + ".log\""
+   execme = CRFSUITEBIN + " learn -m \"" + modelfile + "\" " + tempfile.name + " >\"" + modelfile + ".log\""
 
 #   javaclasspath = EMORYCRFLIB + "emorycrf" + ":" + EMORYCRFLIB + "mallet/class/:" + EMORYCRFLIB + "mallet/lib/mallet-deps.jar"
 #   javaargs = "-Xmx" + MAXMEM + " -cp \"" + javaclasspath + "\""
