@@ -30,7 +30,6 @@ from xml.sax.handler import ContentHandler
 #Configuration
 def loadConfig( filename ):
    global CONFIGTREE
-   global HIDELIB
    global CRFMODELDIR
    global MAXMEM
    global DICTIONARY
@@ -38,7 +37,6 @@ def loadConfig( filename ):
    try:
       CONFIGTREE = ElementTree.parse(filename)
       croot = CONFIGTREE.getroot()
-      HIDELIB = croot.find('hidelib').text
       CRFMODELDIR = croot.find('crfmodeldir').text
       CRFSUITEBIN = croot.find('crfsuitebin').text
       MAXMEM = croot.find('maxmem').text
@@ -671,57 +669,6 @@ def regexMatchFeatures( term ):
       features.append( "ISSPACE" )
 #   print "\n" + str(features)
    return features
-
-
-def addFeaturesPerl( mallet ):
-   """Currently calls perl to generate most regular expression features.
-      The dictionary features are added in the python code.
-      The dictionary features are currently case-insensitive."""
-
-
-   #the dictionary features are currently case-insensitive
-   #TODO - add support for passing in extra feature processing
-   #this function adds the standard features to a mallet formatted file
-   
-   tempfile = NamedTemporaryFile(delete=False)
-   tempfilename = tempfile.name
-   tempfile.write(mallet)
-   tempfile.close()
-
-   #print >> sys.stderr, os.system("which perl")
-   addfeatures = "perl " + HIDELIB + "/HIDE-addfeatures.pl " + tempfilename
-#   if DICTIONARYFILE != '':
-#      addfeatures = "perl " + HIDELIB + "/HIDE-addfeatures.pl " + tempfilename + " " + DICTIONARYFILE
-
-   print >> sys.stderr, "execing [" + addfeatures + "]"
-   proc = subprocess.Popen(addfeatures,
-      shell=True,
-      stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE,
-      )
-   stdout_value, stderr_value = proc.communicate()
-   #print >> sys.stderr, "stdout_value = "  + str(stdout_value)
-   #print >> sys.stderr, "stderr_value = "  + str(stderr_value)
-   os.unlink(tempfile.name)
-   features = str(stdout_value)
-   #we now have all of the features
-   #now loop through (*again*) and add the dictionary features
-   fvs = features.split("\n")
-   for i in range(len(fvs)):
-      fv = fvs[i]
-      fs = re.split('\s+', fv)
-      token = fs[len(fs)-2]
-      m = re.match('TERM_(.*)', f)
-      term = m.group(1)
-      in_dict = checkDictionaries( term )
-      if in_dict != '':
-         #print "FOUND that [" + term + "] is in " + in_dict
-         fvs[i] = in_dict + " " + fv
-   features = "\n".join(fvs) #remake the string from the fvs
-   return features
-
-   
 
 def trainModel( modelfile, mallet ):
    #write a temporary file containing the mallet features file
