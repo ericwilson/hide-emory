@@ -4,6 +4,9 @@
 {% block htmlhead %}
 {{block.super}}
 <style type="text/css" media="screen">
+.selected {
+   background-color: #CCCCCC;
+}
 #filelist ul{
    list-style: none;
    margin: 0px;
@@ -125,6 +128,7 @@ HIDE: Label Documents
 <!-- insert crf list here
 -->
 <ul class="smaller">
+<li>Select a model to perform automatic labeling:</li>
 <form name="crfform" action="/hide/autolabelset/{{tag}}" method="POST">
 {% csrf_token %}
 <input type="hidden" name="crf"/>
@@ -134,19 +138,25 @@ HIDE: Label Documents
 </form>
 </ul>
 </li>
+<li><a href="javascript: submitform()">Train</a>
+<ul class="smaller">
 <li><a href="javascript: submitform()">Train</a></li>
-<li><a href="/hide/deidentifyset/{{tag}}">De-Identify</a></li>
-<li>
-<a href="javascript: submitwritetrain()">Save</a> 
+<li><a href="javascript: submitwritetrain()">Save training set to disk (advanced)</a></li>
+</ul>
 </li>
-<li><a href="./">  Help  </a></li>
+<li><a href="/hide/deidentifyset/{{tag}}">De-Identify</a></li>
+<li><a href="http://mathcs.emory.edu/hide/doc/">  Help  </a></li>
 </ul>
 </div>
 
 <div id="filelist">
 <ul>
-  {% for tag in tags %} 
-  <li><a href="/hide/{{path}}/{{tag}}">{{ tag }}</a></li>
+  {% for t in tags %} 
+  {% if t == tag %}
+  <li><a class="selected" href="/hide/{{path}}/{{t}}">{{ t }}</a></li>
+  {% else %}
+  <li><a href="/hide/{{path}}/{{t}}">{{ t }}</a></li>
+  {% endif %}
   {% endfor %}
 </ul>
 </div>

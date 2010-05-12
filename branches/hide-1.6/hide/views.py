@@ -166,7 +166,7 @@ def analysislist( request ):
    for f in folders:
       utags[f] = 1 
 
-   tags = utags.keys()
+   tags = sorted(utags.keys())
    
    context = {
      'tags':tags,
@@ -822,6 +822,9 @@ def delete(request,id):
     del db[id]
     return HttpResponseRedirect(u"/hide/")
 
+def deidentifyblank(request):
+   return deidentifyset(request, '')
+
 @login_required(redirect_field_name='next')
 def deidentifyset( request, tag ):
    if request.method == 'POST' or request.method == 'GET':
@@ -836,9 +839,9 @@ def deidentifyset( request, tag ):
             print "title = " + obj['value']['title']
             clean, errors = tidy_document( html,
                options={'numeric-entities':1, 'output-xml':1, 'add-xml-decl':0, 'input-xml':1})
-            f =open('/tmp/set.xml', 'w')
-            f.write( "<dontuseme>" + html + "</dontuseme>" )
-            f.close()
+         #   f =open('/tmp/set.xml', 'w')
+         #   f.write( "<dontuseme>" + html + "</dontuseme>" )
+         #   f.close()
             deid = doReplacement( clean, REPLACEMENTS, repl )
             print "replaced " + str(repl)
             xhtml = deid
@@ -1133,7 +1136,7 @@ def train(request,tag):
    count = 0
    message = ''
    if ( tag == '' ):
-      message = "Please select a set to label from the left"
+      message = "Please select a set from the left"
    else:
       objects = db.view('tags/tags', keys=[tag])
       for obj in objects:
@@ -1383,7 +1386,7 @@ def getalltags( db ):
    alltags = dict()
    items = db.view('tags/justtags', group=True)
    for item in items:
-      alltags[item['key']] = 1
+      alltags[item['key']] = 1 
    keys = alltags.keys()
    keys.sort()
    return keys
