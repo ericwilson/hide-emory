@@ -53,7 +53,7 @@ import caTIES
 log = ''
 try:
    log = loadConfig(getattr(settings,'HIDECONFIG', 'default'))
-   HIDELIB = HIDE.HIDELIB
+#   HIDELIB = HIDE.HIDELIB
    CRFMODELDIR = HIDE.CRFMODELDIR # getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
    if not os.path.isdir(CRFMODELDIR):
       os.mkdir( CRFMODELDIR )
@@ -1259,7 +1259,8 @@ def anonymize(request, tag):
 
       context['error'] = "anonymizing " + stringtoanon
       print "sending " + stringtoanon
-      execme = "java -cp \"" + HIDELIB + "\" edu.emory.mathcs.Main 2"
+      #make sure classpath is set.
+      execme = "java edu.emory.mathcs.Main 2"
       #do the kanonymization over system call
       proc = subprocess.Popen(execme,
          shell=True,
@@ -1380,7 +1381,7 @@ def labeldocs( request ):
 
 def getalltags( db ):
    alltags = dict()
-   items = db.view('tags/tags')
+   items = db.view('tags/justtags', group=True)
    for item in items:
       alltags[item['key']] = 1
    keys = alltags.keys()
