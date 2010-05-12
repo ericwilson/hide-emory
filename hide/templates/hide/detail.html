@@ -318,8 +318,10 @@ function sendnormal(f) {
 
 <div id="taskbar">
 <ul class="dropdown">
-<li class="dir"><a href="/hide/autolabel/{{row.id}}">Label</a> 
+<li class="dir">
+<a href="/hide/autolabel/{{row.id}}">Label</a> 
 <ul class="smaller">
+<li>Select a model to perform automatic labeling:</li>
 <form name="crfform" action="/hide/autolabel/{{row.id}}" method="POST">
 {% csrf_token %}
 <input type="hidden" name="crf"/>
@@ -340,7 +342,7 @@ function sendnormal(f) {
 <a href="javascript:{}" onclick="sendnormal(this);">Save</a> 
 </form>
 </li>
-<li><a href="./">  Help  </a></li>
+<li><a href="http://mathcs.emory.edu/hide/doc/">  Help  </a></li>
 <li><a href="{{referer}}">Back</a></li>
 </ul>
 </div>
