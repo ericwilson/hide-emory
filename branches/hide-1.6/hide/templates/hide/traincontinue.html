@@ -95,7 +95,7 @@ jQuery("#anon1").jqGrid({
 					
                                 ], 
 			autowidth: true,
-                        caption: "{{count}} Objects for training and/or labeling"
+                        caption: "{{count}} Objects for training and/or labeling",
                         });
 
 var mydata = [{% for key,object in objects.items %}
@@ -140,12 +140,25 @@ HIDE: Label Documents
 </li>
 <li><a href="javascript: submitform()">Train</a>
 <ul class="smaller">
-<li><a href="javascript: submitform()">Train</a></li>
+<li><a href="javascript: submitform()">Train a classifier to automatically detect the highlighted text</a></li>
 <li><a href="javascript: submitwritetrain()">Save training set to disk (advanced)</a></li>
 </ul>
 </li>
-<li><a href="/hide/deidentifyset/{{tag}}">De-Identify</a></li>
-<li><a href="http://mathcs.emory.edu/hide/doc/">  Help  </a></li>
+<li><a href="/hide/deidentifyset/{{tag}}">De-Identify</a>
+<ul class="smaller">
+<li><a href="/hide/deidentifyset/{{tag}}">De-identify the currently selected set by replacing the highlighted text</a></li>
+</ul>
+</li>
+<li><a href="/hide/analysis/{{tag}}">Analyze</a>
+<ul class="smaller">
+<li><a href="/hide/analysis/{{tag}}">Analyze the currently selected set using k-fold cross-validation (advanced)</a></li>
+</ul>
+</li>
+<li><a href="http://mathcs.emory.edu/hide/doc/">  Help  </a>
+<ul class="smaller">
+<li><a href="http://mathcs.emory.edu/hide/doc/">Go to help page (internet)</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -176,6 +189,7 @@ HIDE: Label Documents
 {% endcomment %}
 </form>
 
+{{tag}}
 <table id="anon1"></table>
 {% endif %}
   

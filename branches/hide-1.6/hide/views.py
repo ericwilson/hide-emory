@@ -55,36 +55,18 @@ try:
    log = loadConfig(getattr(settings,'HIDECONFIG', 'default'))
 #   HIDELIB = HIDE.HIDELIB
    CRFMODELDIR = HIDE.CRFMODELDIR # getattr(settings, 'CRF_MODEL_DIR', '/tmp/')
+   db = HIDE.HIDE_DB
+   deiddb = HIDE.HIDE_DEID_DB
    if not os.path.isdir(CRFMODELDIR):
       os.mkdir( CRFMODELDIR )
 
-   SERVER = Server(getattr(settings,'COUCHDB_SERVER','http://127.0.0.1:5984'))
-   COUCHUSER = getattr(settings, 'COUCHDB_USER', 'none')
-   if ( COUCHUSER != "none" ):
-      COUCHPASSWD = getattr(settings, 'COUCHDB_PASS', 'none')
-      SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
-
    REPLACEMENTS = getReplacements()
    LEGEND = dict()
-   print REPLACEMENTS
-   print log
+   print "Replacements for de-identification are " + str(REPLACEMENTS)
+#   print log
 except:
    print "Error initializing HIDE, there is probably something wrong with the configuration file at " + log
    print sys.exc_info()
-
-try:
-   db = SERVER.get_or_create_db('hide_objects')
-   deiddb = SERVER.get_or_create_db('hide_deid')
-   couch_schema = getattr(settings, 'COUCHDB_SCHEMA', 'error')
-   syncon = getattr(settings,'COUCHSYNC', 0)
-   if syncon == 1:
-      print "Syncing schema " + couch_schema
-      loader = FileSystemDocsLoader(couch_schema)
-      loader.sync(db)
-      print "done syncing schema"
-except :
-   print "Couldn't connect to couchdb"
-
 
 
 def objlist(request):
