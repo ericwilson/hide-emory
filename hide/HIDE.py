@@ -24,6 +24,11 @@ from xml.sax import make_parser
 from xml.sax import parseString
 from xml.sax.handler import ContentHandler
 
+from restkit import BasicAuth
+from couchdbkit import *
+from couchdbkit.loaders import FileSystemDocsLoader
+from couchdbkit.ext.django.loading import get_db
+
 
 #these variables should be set in order for the HIDE module to work correctly
 #see loadConfig function.
@@ -34,22 +39,51 @@ def loadConfig( filename ):
    global MAXMEM
    global DICTIONARY
    global CRFSUITEBIN
+   global COUCHDB_SERVER
+   global COUCHDB_SCHEMA
+   global COUCHDB_SYNC
+   global HIDE_DB
+   global HIDE_DEID_DB
    try:
       CONFIGTREE = ElementTree.parse(filename)
       croot = CONFIGTREE.getroot()
       CRFMODELDIR = croot.find('crfmodeldir').text
+      if not os.path.isdir(CRFMODELDIR):
+         print "WARN: CRFMODELDIR not found. Creating at " + CRFMODELDIR
+         os.mkdir( CRFMODELDIR )
+
       CRFSUITEBIN = croot.find('crfsuitebin').text
+      if not os.path.exists(CRFSUITEBIN):
+         print "ERROR: Did not find crfsuite at " + CRFSUITEBIN
       MAXMEM = croot.find('maxmem').text
       DICTIONARY = buildDictionary( croot.find('dictionary').text )
-      #f = open('/tmp/dict.text', 'w')
-      #f.write( str(DICTIONARY ) )
-      #f.close()
-      output = ""
-      return output
+      try:
+         COUCHDB_SERVER = croot.find('COUCHDB_SERVER').text
+         COUCHDB_SCHEMA = croot.find('COUCHDB_SCHEMA').text
+         COUCHDB_SYNC = croot.find('COUCHDB_SYNC').text
+         print "COUCHDB_SERVER = " + COUCHDB_SERVER
+         print "COUCHDB_SCHEMA = " + COUCHDB_SCHEMA
+         print "COUCHDB_SYNC = " + COUCHDB_SYNC
+
+         SERVER = Server(COUCHDB_SERVER)
+   #   COUCHUSER = getattr(settings, 'COUCHDB_USER', 'none')
+   #   if ( COUCHUSER != "none" ):
+   #      COUCHPASSWD = getattr(settings, 'COUCHDB_PASS', 'none')
+   #      SERVER.add_authorization(BasicAuth(COUCHUSER, COUCHPASSWD))
+         HIDE_DB = SERVER.get_or_create_db('hide_objects')
+         HIDE_DEID_DB = SERVER.get_or_create_db('hide_deid')
+         if COUCHDB_SYNC == "1":
+            print "Syncing schema " + COUCHDB_SCHEMA
+            loader = FileSystemDocsLoader(COUCHDB_SCHEMA)
+            loader.sync(db)
+            print "done syncing schema"
+      except :
+         print "Couldn't connect to couchdb"
    except:
       print "Error loading configuration from " + filename
       print sys.exc_info()
       raise
+   return "Done configuring HIDE."
 
 def buildDictionary( dir ):
    """Builds the dictionary concept map based on the specified directory"""
