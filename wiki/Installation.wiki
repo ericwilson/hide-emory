@@ -32,6 +32,20 @@ DATABASE_NAME = '/path/to/Code/hide_proj/hide.db'
 }}}
 You may safely ignore the other `DATABASE*` lines.
 
+==Enable the project to support csrf tokens==
+
+Set the middleware classes in the settings.py file.
+
+Set the middleware classes: 
+{{{
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+)
+}}}
+
 ==Enable Django to serve site media==
 Site media refers to stylesheets (css), javascript and images that are necessary for some user interface aspects of HIDE. This section outlines how to enable Django to serve this data. Note: This is not recommended for a production environment. If you are installing this system for multiple users you will need to [http://docs.djangoproject.com/en/dev/howto/deployment/ configure Django to work with a web server]. We recommend [http://httpd.apache.org/ Apache HTTP Server].
 
