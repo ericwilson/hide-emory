@@ -62,7 +62,7 @@ After creating a Django project it is easy to activate the HIDE application by p
 
 * Download the latest version of HIDE to the hide_proj directory.
 {{{
-svn checkout http://hide-emory.googlecode.com/svn/trunk/ hide-emory
+svn checkout http://hide-emory.googlecode.com/svn/branches/hide-1.6/ hide-emory
 }}}
 Note: this link will allow you to run `svn update` periodically to obtain the latest versions of the software. It will not allow you to commit updates to the code. If you wish to contribute to the system, please contact [http://mathcs.emory.edu/~jgardn3 James Gardner]. Create a symbolic link to the code in the `hide_proj` directory.
 {{{
