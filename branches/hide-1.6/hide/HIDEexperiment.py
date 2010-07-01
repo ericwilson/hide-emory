@@ -479,6 +479,10 @@ def calcAccuracyHTML(results):
          else:
             stats[truel]['FN'] += 1
             stats[predl]['FP'] += 1
+# unncomment this to include O in the precision and recall calculations.
+#      else:
+#         total += 1
+#         phicorrect += 1
 
    print "acc: " + str(correct) + " / " + str(total)
 

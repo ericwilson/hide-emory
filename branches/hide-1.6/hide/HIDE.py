@@ -75,7 +75,7 @@ def loadConfig( filename ):
          if COUCHDB_SYNC == "1":
             print "Syncing schema " + COUCHDB_SCHEMA
             loader = FileSystemDocsLoader(COUCHDB_SCHEMA)
-            loader.sync(db)
+            loader.sync(HIDE_DB)
             print "done syncing schema"
       except :
          print "Couldn't connect to couchdb"
