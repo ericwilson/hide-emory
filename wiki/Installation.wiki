@@ -82,7 +82,7 @@ Install necessary python modules.
 elementtree
 datetime
 simplejson
-tidylib
+pytidylib
 couchdbkit
 celery
 hl7
