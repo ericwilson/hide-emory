@@ -79,9 +79,6 @@ Install HTML Tidy from http://tidy.sourceforge.net/. Note that on Windows you wi
 
 Install necessary python modules.
   {{{
-xml.dom.minidom
-urllib
-subprocess
 elementtree
 datetime
 simplejson
