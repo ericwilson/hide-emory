@@ -87,6 +87,7 @@ couchdbkit
 celery
 hl7
 xmlprinter
+pysqlite
   }}}
 
 ===Configure the `settings.py` file===
