@@ -88,7 +88,11 @@ celery
 hl7
 xmlprinter
 pysqlite
+xmlprinter
   }}}
+
+Most of the above can be installed using easy_install. 
+Download for [http://sourceforge.net/projects/py-xmlprinter/files/ xmlprinter].
 
 ===Configure the `settings.py` file===
   * Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
