@@ -89,10 +89,12 @@ hl7
 xmlprinter
 pysqlite
 xmlprinter
+MySQLdb
   }}}
 
 Most of the above can be installed using easy_install. 
 Download for [http://sourceforge.net/projects/py-xmlprinter/files/ xmlprinter].
+Download for [http://sourceforge.net/projects/mysql-python/ MySQLdb].
 
 ===Configure the `settings.py` file===
   * Activate the HIDE application by adding the following lines to the `INSTALLED_APPS` list:
