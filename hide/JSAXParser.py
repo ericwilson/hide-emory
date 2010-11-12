@@ -63,7 +63,12 @@ class SGMLToSuiteHandler( ContentHandler ):
      for c in chars:
         if c == '':
            continue
+        if c == u'\u2028':
+           c = " "
+        if c == u'\xaf':
+           c = " "
         c = urllib.quote(c)
+        print c
         if self.lastTag != 'O':
           if self.first:
            self.mallet += "B-" + self.lastTag + "\tTERM_" + c + "\n"
