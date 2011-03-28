@@ -203,6 +203,7 @@ def SGMLToSuite ( sgml ):
    xhtml = re.sub(spre, '', xhtml)
    xhtml = re.sub(epre, '', xhtml)
    xhtml = '<report>' + xhtml + '</report>'
+   #print xhtml;
    parser = make_parser()
    curHandler = SGMLToSuiteHandler()
    xml.sax.parseString(xhtml, curHandler)

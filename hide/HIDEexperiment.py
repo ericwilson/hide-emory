@@ -5,6 +5,7 @@ import copy
 import sys
 import os
 import re
+import urllib
 
 #takes an array a bunch of mallet formated reports and returns two 
 #arrays corresponding to k-fold training and testing sets indexed from 0 to k-1.
@@ -309,7 +310,18 @@ def calcAccuracyHTMLFromDisk(outdir):
        f = open ( outdir + "/" + t, 'r' )
        text = f.read()
        f.close()
-       resultsets.append(text)
+       stuff = ""
+       inputarr = text.split("\n")
+
+#          if ( a.find( "TERM_\\s" ) != -1 ):
+       for a in inputarr:
+          b = urllib.unquote(a)
+#          if ( not re.search("TERM_\\s", b ) ):
+#            stuff +=  a
+#            stuff += "\n"
+          stuff += a
+          stuff += "\n"
+       resultsets.append(stuff)
    print >> sys.stderr, "done reading results from disk"
 
    phicorrect = 0
@@ -413,7 +425,7 @@ def calcAccuracyHTMLFromDisk(outdir):
       if ( prec + rec != 0 ):
          f1 = (2.0 * prec * rec) / ( prec + rec )
 
-      html += "<td>" + str(prec) + "</td><td>" + str(rec) + "</td><td>" + str(f1) + "</td><td>" + c + "</td>"
+      html += "<td>" + str(round(prec,3)) + "</td><td>" + str(round(rec,3)) + "</td><td>" + str(round(f1,3)) + "</td><td>" + c + "</td>"
       html += "</tr>"
 #   html += "<tr>"
 #   html += "<td>Total:</td>"
@@ -532,7 +544,7 @@ def calcAccuracyHTML(results):
       if ( prec + rec != 0 ):
          f1 = (2.0 * prec * rec) / ( prec + rec )
 
-      html += "<td>" + str(prec) + "</td><td>" + str(rec) + "</td><td>" + str(f1) + "</td><td>" + c + "</td>"
+      html += "<td>" + str(round(prec,3)) + "</td><td>" + str(round(rec,3)) + "</td><td>" + str(round(f1,3)) + "</td><td>" + c + "</td>"
       html += "</tr>"
    html += "</table>"
    #print "made it past the html"
