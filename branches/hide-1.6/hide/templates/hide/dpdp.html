@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block htmlhead %}
+{{block.super}}
+<style type="text/css" media="screen">
+#filelist {
+	background-color: white;
+        padding: 10px;
+        width: 700px;
+        /*line-height: 200%;*/
+	margin-left: auto;
+	margin-right: auto;
+        border: 5px solid #ccc;
+}
+</style>
+
+<link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/ui-lightness/jquery-ui-1.7.2.custom.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/site_media/css/ui.jqgrid.css" />
+
+<link type="text/css" href="css/custom-theme/jquery-ui-1.7.2.custom.css" rel="stylesheet" /> 
+<link type="text/css" href="css/jquery.histogram.css" rel="stylesheet" /> 
+<script type="text/javascript" src="/site_media/js/jquery-1.3.2.min.js"></script> 
+<script type="text/javascript" src="/site_media/js/jquery-ui-1.7.2.custom.min.js"></script> 
+<script type="text/javascript" src="/site_media/js/jquery.histogram.js"></script> 
+
+<script type="text/javascript">
+jQuery(document).ready(function(){ 
+
+jQuery("#histogram").histogram({
+   subject : 'Age',
+   title: ['count'],
+   showPercentage: false,
+   showSubValue: false,
+   legend:false,
+   bars: {
+   {% for row in rows %} "{{row.age}}" : [ {{row.count}} ],  
+   {% endfor %}
+   },
+   labels: [ {% for row in rows %} {{row.age}}, {% endfor %}]
+});
+
+jQuery("#noisyhistogram").histogram({
+   subject : 'Age',
+   title: ['count'],
+   showPercentage: false,
+   showSubValue: false,
+   legend: false,
+   bars: {
+   {% for row in noisy %} "{{row.age}}" : [ {{row.count}} ],  
+   {% endfor %}
+   },
+   labels: [ {% for row in rows %} {{row.age}}, {% endfor %}]
+});
+
+jQuery("#pnoisyhistogram").histogram({
+   subject : 'Age',
+   title: ['count'],
+   showPercentage: false,
+   showSubValue: false,
+   legend: false,
+   bars: {
+   {% for row in pnoisy %} "{{row.age}}" : [ {{row.count}} ],  
+   {% endfor %}
+   },
+   labels: [ {% for row in rows %} {{row.age}}, {% endfor %}]
+});
+
+});
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+DPDP: Differentially Private Data Publisher Demo.
+This demo shows the real histogram and the differentially private histogram of the adult dataset
+using various parameters for the DPDP algorithm.
+<div id="histogram" title="Original Histogram"></div>
+<form name="dpdpform" action="/hide/dpdp/" method="POST">
+{% csrf_token %}
+<input type="text" name="epsilon" value="{{ epsilon }}"/>(The privacy parameter. The smaller the value the higher the privacy)<br/>
+<input type="text" name="threshold" value="{{ threshold }}"/>(If the cell contains less than this percentage of the entire datacube the algorithm stops splitting<br/>
+<input type="text" name="infogainthreshold" value="{{ infogainthreshold }}"/>(If the info_gain is less than this number for split the algorithm stops splitting)<br/>
+<input type="text" name="entropythreshold" value="{{ entropythreshold }}"/>(If the entropy of a cell is larger than this value
+the algorithm stops splitting)<br/>
+<input type="submit" value="Show me private data!" />
+</form>
+
+<div id="noisyhistogram" title="{{ epsilon }}-private baseline Histogram"></div>
+<div id="pnoisyhistogram" title="{{ epsilon }}-private DPDP Histogram"></div>
+
+{% endblock %}
+
