@@ -31,7 +31,6 @@ import xml.sax.saxutils
 import shutil
 import zipfile
 
-
 from zipfile import ZipFile
 
 from tempfile import NamedTemporaryFile
@@ -45,8 +44,8 @@ from JSAXParser import ReportXMLHandler
 from JSAXParser import i2b2XMLHandler
 import caTIES
 
-
-
+import DPDP
+from DPDP import addNoiseToHistogram
 
 
 #first thing is to initialize the HIDE module from the config file
@@ -1420,3 +1419,70 @@ def editsettings( request ):
    context = { 'filepath' : hideconfigfilepath }
    return render_to_response('hide/settings.html', context, context_instance=RequestContext(request))
 
+def generateContextFromHistogram(histogram):
+   entries = list()
+   for key in sorted(histogram, key=lambda k: int(k)):
+      value = histogram[key]
+      val = {"age" : key, "count" : value}
+      entries.append(val)
+   return entries
+   
+
+@login_required(redirect_field_name='next')
+def dpdp( request ):
+   #get the appropriate values
+   config = "age.config"
+   data = "adult-clean.data"
+   f = open( "real.hist",  'r' )
+   mallet = f.read()
+   f.close()
+   lines = mallet.split("\n")
+
+   (DIMENSIONS, DOMAIN, INCREMENT) = DPDP.parseConfig(config)
+   matrix = DPDP.process(data, DIMENSIONS)
+
+   hist = DPDP.generateHistogram(matrix, DIMENSIONS, DOMAIN, INCREMENT)
+
+   originalHist = dict()
+   for l in hist:
+      #print "*** " + l
+   #   m = re.search('\((\d+),.*\)', l)
+      key = l[0]
+   #   key = m.group(1)
+      originalHist[key] = float(hist[l])
+
+   entries = generateContextFromHistogram(originalHist)
+
+   if request.method == "POST":
+      #originalHist
+      epsilon = request.POST['epsilon']
+      threshold = request.POST['threshold']
+      entropythreshold = request.POST['entropythreshold']
+      infogainthreshold = request.POST['infogainthreshold']
+      
+      noisyHist = addNoiseToHistogram(originalHist, float(epsilon))
+      nentries = generateContextFromHistogram(noisyHist)
+
+      pnoisyHist = DPDP.generateDPDPHistogram(matrix, float(epsilon), float(entropythreshold),
+                              float(infogainthreshold), float(threshold), DIMENSIONS, DOMAIN, INCREMENT)
+
+      pHist = dict()
+      for l in pnoisyHist:
+       #  m = re.search('\((\d+),.*\)', l)
+       #  key = m.group(1)
+         key = l[0]
+         pHist[key] = float(pnoisyHist[l])
+
+      pentries = generateContextFromHistogram(pHist)
+
+      context = { 'rows' : list(entries), 'noisy' : list(nentries), 'pnoisy' : list(pentries),
+               'epsilon' : epsilon, 
+               'threshold':threshold,
+               'entropythreshold':entropythreshold,
+               'infogainthreshold':infogainthreshold }
+      return render_to_response('hide/dpdp.html', context, context_instance=RequestContext(request))
+   else:
+      #display a page indicating what the options for DPDP
+      print entries
+      context = { 'rows' : list(entries) }
+      return render_to_response('hide/dpdpget.html', context, context_instance=RequestContext(request))
