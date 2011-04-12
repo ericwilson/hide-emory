@@ -73,14 +73,14 @@ jQuery("#pnoisyhistogram").histogram({
 
 {% block content %}
 
-DPDP: Differentially Private Data Publisher Demo.
+DPCube: Differentially Private Data Publisher Demo.
 This demo shows the real histogram and the differentially private histogram of the adult dataset
-using various parameters for the DPDP algorithm.
+using various parameters for the DPCube algorithm.
 <div id="histogram" title="Original Histogram"></div>
 <form name="dpdpform" action="/hide/dpdp/" method="POST">
 {% csrf_token %}
 <input type="text" name="epsilon" value="{{ epsilon }}"/>(The privacy parameter. The smaller the value the higher the privacy)<br/>
-<input type="text" name="threshold" value="{{ threshold }}"/>(If the cell contains less than this percentage of the entire datacube the algorithm stops splitting<br/>
+<input type="text" name="threshold" value="{{ threshold }}"/>(If the cell contains less than this percentage of the entire datacube the algorithm stops splitting)<br/>
 <input type="text" name="infogainthreshold" value="{{ infogainthreshold }}"/>(If the info_gain is less than this number for split the algorithm stops splitting)<br/>
 <input type="text" name="entropythreshold" value="{{ entropythreshold }}"/>(If the entropy of a cell is larger than this value
 the algorithm stops splitting)<br/>
@@ -88,7 +88,7 @@ the algorithm stops splitting)<br/>
 </form>
 
 <div id="noisyhistogram" title="{{ epsilon }}-private baseline Histogram"></div>
-<div id="pnoisyhistogram" title="{{ epsilon }}-private DPDP Histogram"></div>
+<div id="pnoisyhistogram" title="{{ epsilon }}-private DPCube Histogram"></div>
 
 {% endblock %}
 
